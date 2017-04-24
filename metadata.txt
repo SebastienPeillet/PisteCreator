@@ -1,0 +1,39 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=PisteCreator
+qgisMinimumVersion=2.16
+description=ONF UI plugins to create tracks
+version=0.1
+author=Peillet Sebastien
+email=peillet.seb@gmail.com
+
+about=ONF UI plugins to create tracks In French Guyana forest, it's not easy to lead engine deep into the wood. The rainy season challenges the earthworks and the tracks degrades, due to the water runoff on inclined tracks. This tool help to avoid tilted tracks uring the tracks planification.
+
+tracker=https://github.com/SebastienPeillet/PisteCreator/issues
+repository=https://github.com/SebastienPeillet/PisteCreator
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=cad, editing, vector, topography
+
+homepage=https://github.com/SebastienPeillet/PisteCreator
+category=Plugins
+icon=icon.png
+# experimental flag
+experimental=True
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
