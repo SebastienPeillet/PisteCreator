@@ -6,7 +6,7 @@
  ONF UI plugins to create tracks
                               -------------------
         begin                : 2017-04-24
-        git sha              : $Format:%H$
+        git sha              : $24-04-2017:10-00
         copyright            : (C) 2017 by Peillet Sebastien
         email                : peillet.seb@gmail.com
  ***************************************************************************/
@@ -20,8 +20,10 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
-from PyQt4.QtGui import QAction, QIcon
+from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QFileInfo
+from PyQt4.QtGui import QAction, QIcon, QFileDialog
+from qgis.gui import *
+from qgis.core import *
 # Initialize Qt resources from file resources.py
 import resources
 
@@ -29,7 +31,8 @@ import resources
 from PisteCreator_dockwidget import PisteCreatorDockWidget
 import os.path
 
-
+from Utils import *
+    
 class PisteCreator:
     """QGIS Plugin Implementation."""
 
@@ -43,6 +46,7 @@ class PisteCreator:
         """
         # Save reference to the QGIS interface
         self.iface = iface
+        self.canvas = iface.mapCanvas()
 
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
@@ -173,6 +177,12 @@ class PisteCreator:
             text=self.tr(u'PisteCreator'),
             callback=self.run,
             parent=self.iface.mainWindow())
+        self.dockwidget = PisteCreatorDockWidget()
+        self.list_layer()
+        self.dockwidget.DEMButton.clicked.connect(self.select_dem_file)
+        self.dockwidget.TracksButton.clicked.connect(self.list_layer)
+        self.dockwidget.EditButton.clicked.connect(self.slopeCalc)
+
 
     #--------------------------------------------------------------------------
 
@@ -205,7 +215,45 @@ class PisteCreator:
             self.iface.removeToolBarIcon(action)
         # remove the toolbar
         del self.toolbar
+        
+    def select_dem_file(self):
+        filename = QFileDialog.getOpenFileName(self.dockwidget, "Select output file ","", '*.tif')
+        self.dockwidget.DEMInput.setText(filename)
+    
+    def list_layer(self):
+        self.dockwidget.TracksInput.clear()
+        self.dockwidget.TracksInput.clearEditText()
+        layers = self.iface.legendInterface().layers()
+        layer_list = []
+        for layer in layers:
+            layer_list.append(layer.name())
+        self.dockwidget.TracksInput.addItems(layer_list)
 
+    def slopeCalc(self):
+        #1 Get the vector layer
+        #2 Get the raster layer
+        dem = self.dockwidget.DEMInput.text()
+        
+        #Load raster layer
+        fileName = dem
+        fileInfo = QFileInfo(fileName)
+        baseName = fileInfo.baseName()
+        #keep raster path for the RasterCalculator operation
+        pathRaster = os.path.dirname(dem)
+        dem = QgsRasterLayer(fileName, baseName)
+        if not dem.isValid():
+            print "Layer failed to load!"
+        
+        #3 Open edit vector layer
+        #4 Activate Maptools
+        ct = SlopeMapTool(self.iface,  self.afficheXY, dem);
+        self.iface.mapCanvas().setMapTool(ct)
+    
+    def afficheXY(self,a,b):
+        if a != None :
+            self.dockwidget.AlongResult.setText(str(a))
+        if b != None :
+            self.dockwidget.CrossResult.setText(str(b))
     #--------------------------------------------------------------------------
 
     def run(self):
@@ -222,7 +270,6 @@ class PisteCreator:
             if self.dockwidget == None:
                 # Create the dockwidget (after translation) and keep reference
                 self.dockwidget = PisteCreatorDockWidget()
-
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
 
