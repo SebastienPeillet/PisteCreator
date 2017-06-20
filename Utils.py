@@ -6,7 +6,7 @@
  Tools to calculate along and cross slope for road
 							  -------------------
 		begin				 : 2017-03-22
-		git sha				 : 2017-03-29:16
+		git sha				 : 2017-06-20:11
 		copyright			 : (C) 2017 by Peillet Sebastien
 		email				 : peillet.seb@gmail.com
  ***************************************************************************/
@@ -42,16 +42,16 @@ class SlopeMapTool(QgsMapTool):
         self.cSlope= None
         return None
         
+    #Event when user move the mouse : it will define a second point and launch slopeCalc function.
     def canvasMoveEvent(self,e):
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
         self.point2coord = point
-        print self.point1coord
-        print self.point2coord
         if self.point1coord != None and self.point2coord != None and self.point1coord!=self.point2coord :
             self.aSlope,self.cSlope = self.slopeCalc(self.point1coord,self.point2coord)
         self.callback(self.aSlope,self.cSlope)
         return None
-        
+    
+    #Event when user does a simple click : it will define a point for slope calculation. If it's the first point of a polyline it will create a new polyline, otherwise it adds a new vertice to the polyline.
     def canvasReleaseEvent(self,e):
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
         self.point1coord = point
@@ -80,40 +80,18 @@ class SlopeMapTool(QgsMapTool):
             pr = self.linesLayer.dataProvider()
             pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
             self.canvas.refresh()
-        
-        zStartIdent = self.dem.dataProvider().identify(point,QgsRaster.IdentifyFormatValue)
-        zStartValue = zStartIdent.results()[1]
-        print zStartValue
         return None
-
-    # def canvasPressEvent(self,e):
-        # point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
-        # #self.points.append(point)
-        # self.callback(point)
-        # return None
-    def coordPoint(self,Point) :
-        x1,y1=Point
-        return x1
-    def slopeCalcTest(self,sP,eP):
-        x1,y1=sP
-        x2,y2=eP
-        return x1,x2
-        
-    # def reset(self):
-        # self.startPoint = self.endPoint = None
-        # self.isEmittingPoint = False
     
+    #Do the slope calc
     def slopeCalc(self, sP, eP) :
         # #Retrieve coord
         x1,y1=sP
         x2,y2=eP
-        p1 = QgsPoint(x1,y1)
-        p2 = QgsPoint(x2,y2)
         
         # Along slope calculation
-        zStartIdent = self.dem.dataProvider().identify(p1,QgsRaster.IdentifyFormatValue)
+        zStartIdent = self.dem.dataProvider().identify(sP,QgsRaster.IdentifyFormatValue)
         zStartValue = zStartIdent.results()[1]
-        zEndIdent = self.dem.dataProvider().identify(p2,QgsRaster.IdentifyFormatValue)
+        zEndIdent = self.dem.dataProvider().identify(eP,QgsRaster.IdentifyFormatValue)
         zEndValue = zEndIdent.results()[1]
         distSeg=math.sqrt(sP.sqrDist(eP))
 

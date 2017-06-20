@@ -6,7 +6,7 @@
  ONF UI plugins to create tracks
                               -------------------
         begin                : 2017-04-24
-        git sha              : $24-04-2017:10-00
+        git sha              : 2017-06-20:11
         copyright            : (C) 2017 by Peillet Sebastien
         email                : peillet.seb@gmail.com
  ***************************************************************************/
@@ -231,6 +231,10 @@ class PisteCreator:
 
     def slopeCalc(self):
         #1 Get the vector layer
+        layers = self.iface.legendInterface().layers()
+        selected_lignes = self.dockwidget.TracksInput.currentIndex()
+        linesLayer = layers[selected_lignes]
+        linesLayer.startEditing()
         #2 Get the raster layer
         dem = self.dockwidget.DEMInput.text()
         
@@ -246,7 +250,7 @@ class PisteCreator:
         
         #3 Open edit vector layer
         #4 Activate Maptools
-        ct = SlopeMapTool(self.iface,  self.afficheXY, dem);
+        ct = SlopeMapTool(self.iface,  self.afficheXY, linesLayer, dem);
         self.iface.mapCanvas().setMapTool(ct)
     
     def afficheXY(self,a,b):
