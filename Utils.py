@@ -24,16 +24,18 @@
 from qgis.core import *
 from qgis.gui import *
 import math
+import time
 
 class SlopeMapTool(QgsMapTool):
-    def __init__(self,iface, callback, dem):
+    def __init__(self,iface, callback, linesLayer, dem):
         QgsMapTool.__init__(self,iface.mapCanvas())
         self.iface      = iface
         self.callback   = callback
         self.canvas     = iface.mapCanvas()
         # self.trackslayer = trackslayer
         self.dem = dem
-        self.points = []
+        self.linesLayer = linesLayer
+        self.edit = False
         self.point1coord= None
         self.point2coord= None
         self.aSlope= None
@@ -43,6 +45,8 @@ class SlopeMapTool(QgsMapTool):
     def canvasMoveEvent(self,e):
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
         self.point2coord = point
+        print self.point1coord
+        print self.point2coord
         if self.point1coord != None and self.point2coord != None and self.point1coord!=self.point2coord :
             self.aSlope,self.cSlope = self.slopeCalc(self.point1coord,self.point2coord)
         self.callback(self.aSlope,self.cSlope)
@@ -51,8 +55,35 @@ class SlopeMapTool(QgsMapTool):
     def canvasReleaseEvent(self,e):
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
         self.point1coord = point
-        #add vertices
-        self.callback(self.aSlope,self.cSlope)
+        if self.edit == False :
+            pt = QgsPoint(point)
+            pLine = [pt]
+            ft = QgsFeature()
+            polyline = QgsGeometry.fromPolyline(pLine)
+            ft.setGeometry(polyline)
+            
+            pr = self.linesLayer.dataProvider()
+            pr.addFeatures([ft])
+            
+            self.edit = True
+            self.canvas.refresh()
+            
+        else :
+            pt = QgsPoint(point)
+            ids = [i.id() for i in self.linesLayer.getFeatures()]
+            id = ids[-1]
+            iterator = self.linesLayer.getFeatures(QgsFeatureRequest().setFilterFid(id))
+            ft = next(iterator)
+            geom = ft.geometry().asPolyline()
+            #add vertices
+            geom.append(pt)
+            pr = self.linesLayer.dataProvider()
+            pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
+            self.canvas.refresh()
+        
+        zStartIdent = self.dem.dataProvider().identify(point,QgsRaster.IdentifyFormatValue)
+        zStartValue = zStartIdent.results()[1]
+        print zStartValue
         return None
 
     # def canvasPressEvent(self,e):
@@ -76,11 +107,13 @@ class SlopeMapTool(QgsMapTool):
         # #Retrieve coord
         x1,y1=sP
         x2,y2=eP
+        p1 = QgsPoint(x1,y1)
+        p2 = QgsPoint(x2,y2)
         
         # Along slope calculation
-        zStartIdent = self.dem.dataProvider().identify(sP,QgsRaster.IdentifyFormatValue)
+        zStartIdent = self.dem.dataProvider().identify(p1,QgsRaster.IdentifyFormatValue)
         zStartValue = zStartIdent.results()[1]
-        zEndIdent = self.dem.dataProvider().identify(eP,QgsRaster.IdentifyFormatValue)
+        zEndIdent = self.dem.dataProvider().identify(p2,QgsRaster.IdentifyFormatValue)
         zEndValue = zEndIdent.results()[1]
         distSeg=math.sqrt(sP.sqrDist(eP))
 
