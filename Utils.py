@@ -40,6 +40,8 @@ class SlopeMapTool(QgsMapTool):
         self.point2coord= None
         self.aSlope= None
         self.cSlope= None
+        self.prevtime= time.time()
+        self.timer=None
         return None
         
     #Event when user move the mouse : it will define a second point and launch slopeCalc function.
@@ -51,36 +53,70 @@ class SlopeMapTool(QgsMapTool):
         self.callback(self.aSlope,self.cSlope)
         return None
     
+    # def canvasPressEvent(self,e):
+        # previous = self.prevtime
+        # self.prevtime = time.time()
+        # self.timer = self.prevtime - previous
+        # print self.timer
+        # return None
+    
     #Event when user does a simple click : it will define a point for slope calculation. If it's the first point of a polyline it will create a new polyline, otherwise it adds a new vertice to the polyline.
     def canvasReleaseEvent(self,e):
+        previousPoint = self.point1coord
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
         self.point1coord = point
-        if self.edit == False :
-            pt = QgsPoint(point)
-            pLine = [pt]
-            ft = QgsFeature()
-            polyline = QgsGeometry.fromPolyline(pLine)
-            ft.setGeometry(polyline)
-            
-            pr = self.linesLayer.dataProvider()
-            pr.addFeatures([ft])
-            
-            self.edit = True
-            self.canvas.refresh()
-            
+        if previousPoint != self.point2coord :
+            if self.edit == False :
+                pt = QgsPoint(point)
+                pLine = [pt]
+                ft = QgsFeature()
+                polyline = QgsGeometry.fromPolyline(pLine)
+                ft.setGeometry(polyline)
+                
+                pr = self.linesLayer.dataProvider()
+                pr.addFeatures([ft])
+                
+                self.edit = True
+                self.canvas.refresh()
+                
+            else :
+                pt = QgsPoint(point)
+                ids = [i.id() for i in self.linesLayer.getFeatures()]
+                id = ids[-1]
+                iterator = self.linesLayer.getFeatures(QgsFeatureRequest().setFilterFid(id))
+                ft = next(iterator)
+                geom = ft.geometry().asPolyline()
+                #add vertices
+                geom.append(pt)
+                pr = self.linesLayer.dataProvider()
+                pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
+                self.canvas.refresh()
         else :
-            pt = QgsPoint(point)
-            ids = [i.id() for i in self.linesLayer.getFeatures()]
-            id = ids[-1]
-            iterator = self.linesLayer.getFeatures(QgsFeatureRequest().setFilterFid(id))
-            ft = next(iterator)
-            geom = ft.geometry().asPolyline()
-            #add vertices
-            geom.append(pt)
-            pr = self.linesLayer.dataProvider()
-            pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
-            self.canvas.refresh()
+            self.reset()
         return None
+    
+    def canvasDoubleClickEvent(self,e):
+        point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
+        pt = QgsPoint(point)
+        ids = [i.id() for i in self.linesLayer.getFeatures()]
+        id = ids[-1]
+        iterator = self.linesLayer.getFeatures(QgsFeatureRequest().setFilterFid(id))
+        ft = next(iterator)
+        geom = ft.geometry().asPolyline()
+        #add vertices
+        geom.append(pt)
+        pr = self.linesLayer.dataProvider()
+        pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
+        self.canvas.refresh()
+        self.edit = False
+        return None
+    
+    def reset(self) :
+        self.edit = False
+        self.point1coord= None
+        self.point2coord= None
+        self.aSlope= None
+        self.cSlope= None
     
     #Do the slope calc
     def slopeCalc(self, sP, eP) :
