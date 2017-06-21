@@ -11,13 +11,13 @@ I developped the plugin with the 2.16.0 Qgis version, I will check for compatibi
 Download the entire folder and copy it in the following folder :
   - `Users/.qgis2/python/plugins/`
 
-## How to use
+# How to use
 
 You need to enter the tracks layer and the DEM into the formular and then click on the 'Edit' button to begin edition.
 
 A click does a vertice to te polyline entity. After you create the first vertice, the slope informations will appear into the formular when you move the cursor. A double click will ends the polyline.
 
-## To come
+# To come
 
 - Editing attributes table during creation
 - Enable snap edition
