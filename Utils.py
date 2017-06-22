@@ -132,7 +132,8 @@ class SlopeMapTool(QgsMapTool):
         distSeg=math.sqrt(sP.sqrDist(eP))
 
         if (zStartValue != None and zEndValue != None and distSeg != 0) :
-            aSlope=math.fabs(zStartValue-zEndValue)/distSeg*100
+            # aSlope=math.fabs(zStartValue-zEndValue)/distSeg*100
+            aSlope=(zEndValue-zStartValue)/distSeg*100
         else :
             aSlope=None
         
