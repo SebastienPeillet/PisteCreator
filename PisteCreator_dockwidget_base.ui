@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>631</width>
-    <height>229</height>
+    <height>203</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,12 +15,15 @@
   </property>
   <widget class="QWidget" name="dockwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
-     <widget class="QLabel" name="TracksLabel">
+    <item row="4" column="0">
+     <widget class="QPushButton" name="OptionButton">
       <property name="text">
-       <string>Tracks Layer</string>
+       <string>Options</string>
       </property>
      </widget>
+    </item>
+    <item row="0" column="1" colspan="2">
+     <widget class="QComboBox" name="TracksInput"/>
     </item>
     <item row="6" column="0">
      <widget class="QLabel" name="AlongSLabel">
@@ -29,19 +32,8 @@
       </property>
      </widget>
     </item>
-    <item row="4" column="0">
-     <widget class="QPushButton" name="OptionButton">
-      <property name="text">
-       <string>Options</string>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="0">
-     <widget class="QLabel" name="CrossSLabel">
-      <property name="text">
-       <string>Cross slope :</string>
-      </property>
-     </widget>
+    <item row="2" column="1">
+     <widget class="QLineEdit" name="DEMInput"/>
     </item>
     <item row="4" column="1" colspan="3">
      <widget class="QPushButton" name="EditButton">
@@ -50,14 +42,12 @@
       </property>
      </widget>
     </item>
-    <item row="7" column="1" colspan="3">
-     <widget class="QLineEdit" name="CrossResult"/>
-    </item>
-    <item row="6" column="1" colspan="3">
-     <widget class="QLineEdit" name="AlongResult"/>
-    </item>
-    <item row="2" column="1">
-     <widget class="QLineEdit" name="DEMInput"/>
+    <item row="0" column="3">
+     <widget class="QPushButton" name="TracksButton">
+      <property name="text">
+       <string>↺</string>
+      </property>
+     </widget>
     </item>
     <item row="2" column="3">
      <widget class="QPushButton" name="DEMButton">
@@ -66,6 +56,16 @@
       </property>
      </widget>
     </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="TracksLabel">
+      <property name="text">
+       <string>Tracks Layer</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="1" colspan="3">
+     <widget class="QLineEdit" name="CrossResult"/>
+    </item>
     <item row="2" column="0">
      <widget class="QLabel" name="DEMLabel">
       <property name="text">
@@ -73,15 +73,25 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="1" colspan="2">
-     <widget class="QComboBox" name="TracksInput"/>
+    <item row="6" column="1" colspan="3">
+     <widget class="QLineEdit" name="AlongResult"/>
     </item>
-    <item row="0" column="3">
-     <widget class="QPushButton" name="TracksButton">
+    <item row="7" column="0">
+     <widget class="QLabel" name="CrossSLabel">
       <property name="text">
-       <string>↺</string>
+       <string>Cross slope :</string>
       </property>
      </widget>
+    </item>
+    <item row="8" column="0">
+     <widget class="QLabel" name="LengthLabel">
+      <property name="text">
+       <string>Length</string>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="1" colspan="3">
+     <widget class="QLineEdit" name="LengthResult"/>
     </item>
    </layout>
   </widget>

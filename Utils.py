@@ -40,7 +40,8 @@ class SlopeMapTool(QgsMapTool):
         self.point2coord= None
         self.aSlope= None
         self.cSlope= None
-        self.prevtime= time.time()
+        self.length=None
+        # self.prevtime= time.time()
         self.timer=None
         return None
         
@@ -49,8 +50,8 @@ class SlopeMapTool(QgsMapTool):
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
         self.point2coord = point
         if self.point1coord != None and self.point2coord != None and self.point1coord!=self.point2coord :
-            self.aSlope,self.cSlope = self.slopeCalc(self.point1coord,self.point2coord)
-        self.callback(self.aSlope,self.cSlope)
+            self.aSlope,self.cSlope, self.length = self.slopeCalc(self.point1coord,self.point2coord)
+        self.callback(self.aSlope,self.cSlope,self.length)
         return None
     
     # def canvasPressEvent(self,e):
@@ -133,7 +134,7 @@ class SlopeMapTool(QgsMapTool):
 
         if (zStartValue != None and zEndValue != None and distSeg != 0) :
             # aSlope=math.fabs(zStartValue-zEndValue)/distSeg*100
-            aSlope=(zEndValue-zStartValue)/distSeg*100
+            aSlope=round((zEndValue-zStartValue)/distSeg*100,2)
         else :
             aSlope=None
         
@@ -164,9 +165,9 @@ class SlopeMapTool(QgsMapTool):
         zRightIdent = self.dem.dataProvider().identify(pointright,QgsRaster.IdentifyFormatValue)
         zRightValue = zRightIdent.results()[1]
         if (zLeftValue != None and zRightValue != None and dist!=0) :
-            cSlope=math.fabs(zLeftValue - zRightValue)/(dist*2)*100
+            cSlope=round(math.fabs(zLeftValue - zRightValue)/(dist*2)*100,2)
         else :
             cSlope=None
-        return aSlope , cSlope
+        return aSlope , cSlope, distSeg
 
 

@@ -253,11 +253,13 @@ class PisteCreator:
         ct = SlopeMapTool(self.iface,  self.afficheXY, linesLayer, dem);
         self.iface.mapCanvas().setMapTool(ct)
     
-    def afficheXY(self,a,b):
+    def afficheXY(self,a,b,c):
         if a != None :
             self.dockwidget.AlongResult.setText(str(a))
         if b != None :
             self.dockwidget.CrossResult.setText(str(b))
+        if c != None :
+            self.dockwidget.LengthResult.setText(str(c))
     #--------------------------------------------------------------------------
 
     def run(self):
