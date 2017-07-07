@@ -6,7 +6,7 @@
  Tools to calculate along and cross slope for road
 							  -------------------
 		begin				 : 2017-03-22
-		git sha				 : 2017-06-20:11
+		git sha				 : 2017-07-07
 		copyright			 : (C) 2017 by Peillet Sebastien
 		email				 : peillet.seb@gmail.com
  ***************************************************************************/
@@ -36,13 +36,14 @@ class SlopeMapTool(QgsMapTool):
         self.dem = dem
         self.linesLayer = linesLayer
         self.edit = False
-        self.point1coord= None
-        self.point2coord= None
-        self.aSlope= None
-        self.cSlope= None
-        self.length=None
+        self.point1coord = None
+        self.point2coord = None
+        self.aSlope = None
+        self.cSlope = None
+        self.length = None
         # self.prevtime= time.time()
-        self.timer=None
+        self.timer = None
+        self.rub_polyline = QgsRubberBand(self.canvas,False)
         return None
         
     #Event when user move the mouse : it will define a second point and launch slopeCalc function.
@@ -52,16 +53,19 @@ class SlopeMapTool(QgsMapTool):
         if self.point1coord != None and self.point2coord != None and self.point1coord!=self.point2coord :
             self.aSlope,self.cSlope, self.length = self.slopeCalc(self.point1coord,self.point2coord)
         self.callback(self.aSlope,self.cSlope,self.length)
+        
+        if self.point1coord != None and self.point2coord != None and self.point1coord!=self.point2coord :
+            self.rub_polyline.reset()
+            self.rub_rect.reset()
+            x1,y1=self.point1coord
+            x2,y2=self.point2coord
+            points=[ QgsPoint(x1,y1),QgsPoint(x2,y2)]
+            self.rub_polyline.addGeometry(QgsGeometry.fromPolyline(points),None)
+            self.rub_polyline.setWidth(2)
+            self.rub_polyline.setColor(QColor(255,0,0))
+        
         return None
     
-    # def canvasPressEvent(self,e):
-        # previous = self.prevtime
-        # self.prevtime = time.time()
-        # self.timer = self.prevtime - previous
-        # print self.timer
-        # return None
-    
-    #Event when user does a simple click : it will define a point for slope calculation. If it's the first point of a polyline it will create a new polyline, otherwise it adds a new vertice to the polyline.
     def canvasReleaseEvent(self,e):
         previousPoint = self.point1coord
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
