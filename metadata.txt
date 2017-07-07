@@ -8,7 +8,7 @@
 
 [general]
 name=PisteCreator
-qgisMinimumVersion=2.16
+qgisMinimumVersion=2.14
 description=ONF UI plugins to create tracks
 version=0.2.1
 author=Peillet Sebastien
