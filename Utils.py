@@ -23,6 +23,8 @@
 
 from qgis.core import *
 from qgis.gui import *
+from qgis.gui import QgsRubberBand
+from PyQt4.QtGui import QColor
 import math
 import time
 
@@ -43,25 +45,54 @@ class SlopeMapTool(QgsMapTool):
         self.length=None
         # self.prevtime= time.time()
         self.timer=None
+        self.rub_polyline = QgsRubberBand(self.canvas,False)
+        self.rub_rect = QgsRubberBand(self.canvas,True)
         return None
         
     #Event when user move the mouse : it will define a second point and launch slopeCalc function.
-    def canvasMoveEvent(self,e):
+    def canvasMoveEvent(self,e):        
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
         self.point2coord = point
+        
         if self.point1coord != None and self.point2coord != None and self.point1coord!=self.point2coord :
             self.aSlope,self.cSlope, self.length = self.slopeCalc(self.point1coord,self.point2coord)
         self.callback(self.aSlope,self.cSlope,self.length)
+        
+        if self.point1coord != None and self.point2coord != None and self.point1coord!=self.point2coord :
+            self.rub_polyline.reset()
+            self.rub_rect.reset()
+            x1,y1=self.point1coord
+            x2,y2=self.point2coord
+            points=[ QgsPoint(x1,y1),QgsPoint(x2,y2)]
+            self.rub_polyline.addGeometry(QgsGeometry.fromPolyline(points),None)
+            self.rub_polyline.setWidth(2)
+            if self.aSlope < 10 and self.aSlope > -10 :
+                self.rub_polyline.setColor(QColor(0,255,0))
+            else :
+                self.rub_polyline.setColor(QColor(255,0,0))
+            
+            azimuth=self.point1coord.azimuth(self.point2coord)
+            angle=azimuth-180
+            # TO DO : PUT dist AS USER INPUT
+            dist=30
+            #vecteur directeur buff
+            Xv= dist*math.cos(math.radians(angle))
+            Yv= dist*math.sin(math.radians(angle))
+            #point buff
+            x1_pointleft=x1-Xv
+            y1_pointleft=y1+Yv
+            x1_pointright=x1+Xv
+            y1_pointright=y1-Yv
+            x2_pointleft=x2-Xv
+            y2_pointleft=y2+Yv
+            x2_pointright=x2+Xv
+            y2_pointright=y2-Yv
+            rect=[[ QgsPoint(x1_pointleft,y1_pointleft), QgsPoint(x2_pointleft,y2_pointleft), QgsPoint(x2_pointright,y2_pointright),QgsPoint(x1_pointright,y1_pointright)]]
+            self.rub_rect.addGeometry(QgsGeometry.fromPolygon(rect),None)
+            # self.rub_rect.setFillColor(QColor(0,255,0,50))
+            self.rub_rect.setColor(QColor(0,255,0,50))
         return None
     
-    # def canvasPressEvent(self,e):
-        # previous = self.prevtime
-        # self.prevtime = time.time()
-        # self.timer = self.prevtime - previous
-        # print self.timer
-        # return None
-    
-    #Event when user does a simple click : it will define a point for slope calculation. If it's the first point of a polyline it will create a new polyline, otherwise it adds a new vertice to the polyline.
     def canvasReleaseEvent(self,e):
         previousPoint = self.point1coord
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
@@ -118,6 +149,8 @@ class SlopeMapTool(QgsMapTool):
         self.point2coord= None
         self.aSlope= None
         self.cSlope= None
+        self.rub_polyline.reset()
+        self.rub_rect.reset()
     
     #Do the slope calc
     def slopeCalc(self, sP, eP) :
