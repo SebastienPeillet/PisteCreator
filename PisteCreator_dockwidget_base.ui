@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>547</width>
-    <height>199</height>
+    <height>229</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,41 +15,22 @@
   </property>
   <widget class="QWidget" name="dockwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="4" column="0">
-     <widget class="QPushButton" name="OptionButton">
-      <property name="text">
-       <string>Options</string>
-      </property>
-     </widget>
+    <item row="2" column="1" colspan="2">
+     <widget class="QComboBox" name="DEMInput"/>
     </item>
-    <item row="0" column="1" colspan="2">
-     <widget class="QComboBox" name="TracksInput"/>
+    <item row="9" column="1" colspan="3">
+     <widget class="QLineEdit" name="LengthResult"/>
+    </item>
+    <item row="7" column="1" colspan="3">
+     <widget class="QLineEdit" name="LeftCrossResult"/>
+    </item>
+    <item row="6" column="1" colspan="3">
+     <widget class="QLineEdit" name="AlongResult"/>
     </item>
     <item row="6" column="0">
      <widget class="QLabel" name="AlongSLabel">
       <property name="text">
        <string>Along slope :</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="1" colspan="3">
-     <widget class="QPushButton" name="EditButton">
-      <property name="text">
-       <string>Edit</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="3">
-     <widget class="QPushButton" name="TracksButton">
-      <property name="text">
-       <string>↺</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="3">
-     <widget class="QPushButton" name="DEMButton">
-      <property name="text">
-       <string>↺</string>
       </property>
      </widget>
     </item>
@@ -60,8 +41,26 @@
       </property>
      </widget>
     </item>
-    <item row="7" column="1" colspan="3">
-     <widget class="QLineEdit" name="CrossResult"/>
+    <item row="4" column="0">
+     <widget class="QPushButton" name="OptionButton">
+      <property name="text">
+       <string>Options</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="0">
+     <widget class="QLabel" name="LengthLabel">
+      <property name="text">
+       <string>Length :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1" colspan="3">
+     <widget class="QPushButton" name="EditButton">
+      <property name="text">
+       <string>Edit</string>
+      </property>
+     </widget>
     </item>
     <item row="2" column="0">
      <widget class="QLabel" name="DEMLabel">
@@ -70,28 +69,39 @@
       </property>
      </widget>
     </item>
-    <item row="6" column="1" colspan="3">
-     <widget class="QLineEdit" name="AlongResult"/>
+    <item row="0" column="1" colspan="2">
+     <widget class="QComboBox" name="TracksInput"/>
+    </item>
+    <item row="2" column="3">
+     <widget class="QPushButton" name="DEMButton">
+      <property name="text">
+       <string>↺</string>
+      </property>
+     </widget>
     </item>
     <item row="7" column="0">
      <widget class="QLabel" name="CrossSLabel">
       <property name="text">
-       <string>Cross slope :</string>
+       <string>Left cross slope :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3">
+     <widget class="QPushButton" name="TracksButton">
+      <property name="text">
+       <string>↺</string>
       </property>
      </widget>
     </item>
     <item row="8" column="0">
-     <widget class="QLabel" name="LengthLabel">
+     <widget class="QLabel" name="label">
       <property name="text">
-       <string>Length :</string>
+       <string>Right cross slope :</string>
       </property>
      </widget>
     </item>
     <item row="8" column="1" colspan="3">
-     <widget class="QLineEdit" name="LengthResult"/>
-    </item>
-    <item row="2" column="1" colspan="2">
-     <widget class="QComboBox" name="DEMInput"/>
+     <widget class="QLineEdit" name="RightCrossResult"/>
     </item>
    </layout>
   </widget>
