@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>631</width>
-    <height>203</height>
+    <width>547</width>
+    <height>199</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,9 +32,6 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="1">
-     <widget class="QLineEdit" name="DEMInput"/>
-    </item>
     <item row="4" column="1" colspan="3">
      <widget class="QPushButton" name="EditButton">
       <property name="text">
@@ -52,14 +49,14 @@
     <item row="2" column="3">
      <widget class="QPushButton" name="DEMButton">
       <property name="text">
-       <string>...</string>
+       <string>↺</string>
       </property>
      </widget>
     </item>
     <item row="0" column="0">
      <widget class="QLabel" name="TracksLabel">
       <property name="text">
-       <string>Tracks Layer</string>
+       <string>Tracks Layer :</string>
       </property>
      </widget>
     </item>
@@ -69,7 +66,7 @@
     <item row="2" column="0">
      <widget class="QLabel" name="DEMLabel">
       <property name="text">
-       <string>DEM Layer</string>
+       <string>DEM Layer :</string>
       </property>
      </widget>
     </item>
@@ -86,12 +83,15 @@
     <item row="8" column="0">
      <widget class="QLabel" name="LengthLabel">
       <property name="text">
-       <string>Length</string>
+       <string>Length :</string>
       </property>
      </widget>
     </item>
     <item row="8" column="1" colspan="3">
      <widget class="QLineEdit" name="LengthResult"/>
+    </item>
+    <item row="2" column="1" colspan="2">
+     <widget class="QComboBox" name="DEMInput"/>
     </item>
    </layout>
   </widget>

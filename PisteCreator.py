@@ -47,6 +47,8 @@ class PisteCreator:
         # Save reference to the QGIS interface
         self.iface = iface
         self.canvas = iface.mapCanvas()
+        self.vect_list = []
+        self.rast_list = []
 
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
@@ -178,9 +180,13 @@ class PisteCreator:
             callback=self.run,
             parent=self.iface.mainWindow())
         self.dockwidget = PisteCreatorDockWidget()
-        self.list_layer()
-        self.dockwidget.DEMButton.clicked.connect(self.select_dem_file)
-        self.dockwidget.TracksButton.clicked.connect(self.list_layer)
+        self.list_vect_layer()
+        self.list_rast_layer()
+        # self.dockwidget.DEMButton.clicked.connect(self.select_dem_file)
+        self.dockwidget.TracksButton.clicked.connect(self.list_vect_layer)
+        self.dockwidget.DEMButton.clicked.connect(self.list_rast_layer)
+        # self.dockwidget.TracksInput.clicked.connect(self.list_vect_layer)
+        # self.dockwidget.DEMInput.clicked.connect(self.list_rast_layer)
         self.dockwidget.EditButton.clicked.connect(self.slopeCalc)
 
 
@@ -220,30 +226,52 @@ class PisteCreator:
         filename = QFileDialog.getOpenFileName(self.dockwidget, "Select output file ","", '*.tif')
         self.dockwidget.DEMInput.setText(filename)
     
-    def list_layer(self):
+    def list_vect_layer(self):
+        #clear list and index
         self.dockwidget.TracksInput.clear()
         self.dockwidget.TracksInput.clearEditText()
+        self.vect_list = []
         layers = self.iface.legendInterface().layers()
         layer_list = []
+        index = 0
         for layer in layers:
-            layer_list.append(layer.name())
+            if layer.type() == 0 :
+                layer_list.append(layer.name())
+                self.vect_list.append(index)
+            index+=1
         self.dockwidget.TracksInput.addItems(layer_list)
+
+    def list_rast_layer(self):
+        #clear list and index
+        self.dockwidget.DEMInput.clear()
+        self.dockwidget.DEMInput.clearEditText()
+        self.rast_list = []
+        layers = self.iface.legendInterface().layers()
+        layer_list = []
+        index = 0
+        for layer in layers:
+            if layer.type() == 1 :
+                layer_list.append(layer.name())
+                self.rast_list.append(index)
+            index+=1
+        self.dockwidget.DEMInput.addItems(layer_list)
 
     def slopeCalc(self):
         #1 Get the vector layer
         layers = self.iface.legendInterface().layers()
         selected_lignes = self.dockwidget.TracksInput.currentIndex()
-        linesLayer = layers[selected_lignes]
+        linesLayer = layers[self.vect_list[selected_lignes]]
         linesLayer.startEditing()
         #2 Get the raster layer
-        dem = self.dockwidget.DEMInput.text()
+        selected_lignes = self.dockwidget.DEMInput.currentIndex()
+        DEMLayer = layers[self.rast_list[selected_lignes]]
         
         #Load raster layer
-        fileName = dem
+        fileName = DEMLayer.publicSource()
         fileInfo = QFileInfo(fileName)
         baseName = fileInfo.baseName()
         #keep raster path for the RasterCalculator operation
-        pathRaster = os.path.dirname(dem)
+        pathRaster = os.path.dirname(fileName)
         dem = QgsRasterLayer(fileName, baseName)
         if not dem.isValid():
             print "Layer failed to load!"
