@@ -29,9 +29,12 @@ import resources
 
 # Import the code for the DockWidget
 from PisteCreator_dockwidget import PisteCreatorDockWidget
+from option_Dock import OptionDock
 import os.path
 
 from Utils import *
+
+from option_Dock import GrumpyConfigParser
     
 class PisteCreator:
     """QGIS Plugin Implementation."""
@@ -47,8 +50,7 @@ class PisteCreator:
         # Save reference to the QGIS interface
         self.iface = iface
         self.canvas = iface.mapCanvas()
-        self.vect_list = []
-        self.rast_list = []
+
 
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
@@ -78,7 +80,10 @@ class PisteCreator:
 
         self.pluginIsActive = False
         self.dockwidget = None
-
+        self.optionDock = None
+        self.vect_list = []
+        self.rast_list = []
+        self.ConfigParser = None
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -180,14 +185,15 @@ class PisteCreator:
             callback=self.run,
             parent=self.iface.mainWindow())
         self.dockwidget = PisteCreatorDockWidget()
-        self.list_vect_layer()
-        self.list_rast_layer()
-        # self.dockwidget.DEMButton.clicked.connect(self.select_dem_file)
-        self.dockwidget.TracksButton.clicked.connect(self.list_vect_layer)
-        self.dockwidget.DEMButton.clicked.connect(self.list_rast_layer)
-        # self.dockwidget.TracksInput.clicked.connect(self.list_vect_layer)
-        # self.dockwidget.DEMInput.clicked.connect(self.list_rast_layer)
+        self.listVectLayer()
+        self.listRastLayer()
+        # self.dockwidget.DEMButton.clicked.connect(self.selectDemFile)
+        self.dockwidget.TracksButton.clicked.connect(self.listVectLayer)
+        self.dockwidget.DEMButton.clicked.connect(self.listRastLayer)
+        # self.dockwidget.TracksInput.clicked.connect(self.listVectLayer)
+        # self.dockwidget.DEMInput.clicked.connect(self.listRastLayer)
         self.dockwidget.EditButton.clicked.connect(self.slopeCalc)
+        self.dockwidget.OptionButton.clicked.connect(self.openOption)
 
 
     #--------------------------------------------------------------------------
@@ -222,11 +228,11 @@ class PisteCreator:
         # remove the toolbar
         del self.toolbar
         
-    def select_dem_file(self):
+    def selectDemFile(self):
         filename = QFileDialog.getOpenFileName(self.dockwidget, "Select output file ","", '*.tif')
         self.dockwidget.DEMInput.setText(filename)
     
-    def list_vect_layer(self):
+    def listVectLayer(self):
         #clear list and index
         self.dockwidget.TracksInput.clear()
         self.dockwidget.TracksInput.clearEditText()
@@ -241,7 +247,7 @@ class PisteCreator:
             index+=1
         self.dockwidget.TracksInput.addItems(layer_list)
 
-    def list_rast_layer(self):
+    def listRastLayer(self):
         #clear list and index
         self.dockwidget.DEMInput.clear()
         self.dockwidget.DEMInput.clearEditText()
@@ -276,12 +282,20 @@ class PisteCreator:
         if not dem.isValid():
             print "Layer failed to load!"
         
-        #3 Open edit vector layer
+        #3 
+        self.ConfigParser = GrumpyConfigParser()
+        self.ConfigParser.optionxform = str
+        configFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'option.cfg')
+        self.ConfigParser.read(configFilePath)
+        side_distance = self.ConfigParser.getint('calculation_variable', 'side_distance')
+        tolerated_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_slope')
+        swath_distance = self.ConfigParser.getint('graphical_visualisation', 'swath_distance')
+        
         #4 Activate Maptools
-        ct = SlopeMapTool(self.iface,  self.afficheXY, linesLayer, dem);
+        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_slope, swath_distance);
         self.iface.mapCanvas().setMapTool(ct)
     
-    def afficheXY(self,a,b,c,d):
+    def displayXY(self,a,b,c,d):
         if a != None :
             self.dockwidget.AlongResult.setText(str(a)+'%')
         if b != None :
@@ -290,6 +304,11 @@ class PisteCreator:
             self.dockwidget.RightCrossResult.setText(str(c)+'%')
         if d != None :
             self.dockwidget.LengthResult.setText(str(d))
+        
+    def openOption(self):
+        self.optionDock = OptionDock()
+        self.optionDock.show()
+        return None
     #--------------------------------------------------------------------------
 
     def run(self):
