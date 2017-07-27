@@ -25,126 +25,142 @@ from qgis.core import *
 from qgis.gui import *
 from qgis.gui import QgsRubberBand
 from PyQt4.QtGui import QColor
+from PyQt4.QtCore import QVariant
 import math
 import time
 
 class SlopeMapTool(QgsMapTool):
     def __init__(self,iface, callback, lines_layer, dem, side_distance, tolerated_slope, swath_distance):
         QgsMapTool.__init__(self, iface.mapCanvas())
-        self.iface           = iface
-        self.callback        = callback
-        self.canvas          = iface.mapCanvas()
-        # self.trackslayer   = trackslayer
-        self.dem             = dem
-        self.lines_layer     = lines_layer
-        self.side_distance   = side_distance
-        self.tolerated_slope = tolerated_slope
-        self.swath_distance  = swath_distance
-        self.edit            = False
-        self.point1coord     = None
-        self.point2coord     = None
-        self.a_slope         = None
-        self.c_left_slope    = None
-        self.c_right_slope   = None
-        # self.cSlope        = None
-        self.length          = None
-        self.rub_polyline    = QgsRubberBand(self.canvas, False)
-        self.rub_rect        = QgsRubberBand(self.canvas, True)
+        self.iface            = iface
+        self.callback         = callback
+        self.canvas           = iface.mapCanvas()
+        # self.trackslayer    = trackslayer
+        self.dem              = dem
+        self.lines_layer      = lines_layer
+        self.side_distance    = side_distance
+        self.max_length       = 50
+        self.tolerated_slope  = tolerated_slope
+        self.swath_distance   = swath_distance
+        self.edit             = False
+        self.point1coord      = None
+        self.point2coord      = None
+        self.a_slope          = None
+        self.c_left_slope     = None
+        self.c_right_slope    = None
+        # self.cSlope         = None
+        self.length           = None
+        self.rub_polyline     = QgsRubberBand(self.canvas, False)
+        self.rub_rect         = QgsRubberBand(self.canvas, True)
+        self.rub_rect_anchor  = QgsRubberBand(self.canvas, True)
+        self.rub_rect_anchors = QgsRubberBand(self.canvas, True)
+        self.rub_cursor       = QgsRubberBand(self.canvas, True)
         return None
         
     #Event when user move the mouse : it will define a second point and launch slopeCalc function.
     def canvasMoveEvent(self,e):        
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(), e.pos().y())
         self.point2coord = point
+        self.rub_cursor.reset()
+        self.rub_cursor.addGeometry(QgsGeometry.fromPoint(QgsPoint(self.point2coord[0], self.point2coord[1])).buffer(self.swath_distance,20),None)
+        self.rub_cursor.setColor(QColor(0,255,0,50))
+        self.rub_cursor.setWidth(2)
         
         if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord :
             self.a_slope, self.c_left_slope, self.c_right_slope, self.length = self.slopeCalc(self.point1coord, self.point2coord)
         self.callback(self.a_slope, self.c_left_slope, self.c_right_slope, self.length)
         
         if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord :
-            self.rub_polyline.reset()
-            self.rub_rect.reset()
-            x1, y1 = self.point1coord
-            x2, y2 = self.point2coord
-            points = [ QgsPoint(x1,y1),QgsPoint(x2,y2)]
-            self.rub_polyline.addGeometry(QgsGeometry.fromPolyline(points), None)
-            self.rub_polyline.setWidth(2)
-            if self.a_slope < self.tolerated_slope and self.a_slope > -(self.tolerated_slope) :
-                self.rub_polyline.setColor(QColor(0, 255, 0))
-            else :
-                self.rub_polyline.setColor(QColor(255, 0, 0))
-            
-            azimuth = self.point1coord.azimuth(self.point2coord)
-            angle = azimuth - 180
-            # TO DO : PUT dist AS USER INPUT
-            dist= self.swath_distance
-            #vecteur directeur buff
-            Xv = dist * math.cos(math.radians(angle))
-            Yv = dist * math.sin(math.radians(angle))
-            #point buff
-            x1_pointleft = x1 - Xv
-            y1_pointleft = y1 + Yv
-            x1_pointright = x1 + Xv
-            y1_pointright = y1 - Yv
-            x2_pointleft = x2 - Xv
-            y2_pointleft = y2 + Yv
-            x2_pointright = x2 + Xv
-            y2_pointright = y2 - Yv
-            rect=[[ QgsPoint(x1_pointleft, y1_pointleft), QgsPoint(x2_pointleft, y2_pointleft), QgsPoint(x2_pointright, y2_pointright), QgsPoint(x1_pointright, y1_pointright)]]
-            self.rub_rect.addGeometry(QgsGeometry.fromPolygon(rect),None)
-            # self.rub_rect.setFillColor(QColor(0,255,0,50))
-            self.rub_rect.setColor(QColor(0,255,0,50))
+            self.rubDisplayUp()
         return None
     
     def canvasReleaseEvent(self,e):
         previousPoint = self.point1coord
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
         self.point1coord = point
-        if previousPoint != self.point2coord :
-            if self.edit == False :
-                pt = QgsPoint(point)
-                pLine = [pt]
-                ft = QgsFeature()
-                polyline = QgsGeometry.fromPolyline(pLine)
-                ft.setGeometry(polyline)
-                
-                pr = self.lines_layer.dataProvider()
-                pr.addFeatures([ft])
-                
-                self.edit = True
-                self.canvas.refresh()
-                
+        
+        #Left click
+        if e.button() == 1 :
+            if previousPoint != self.point2coord :
+                if self.edit == False :
+                    pt = QgsPoint(point)
+                    pLine = [pt]
+                    ft = QgsFeature()
+                    polyline = QgsGeometry.fromPolyline(pLine)
+                    ft.setGeometry(polyline)
+                    
+                    pr = self.lines_layer.dataProvider()
+                    pr.addFeatures([ft])
+                    
+                    self.edit = True
+                    self.canvas.refresh()
+                    
+                else :
+                    pt = QgsPoint(point)
+                    ids = [i.id() for i in self.lines_layer.getFeatures()]
+                    id = ids[-1]
+                    iterator = self.lines_layer.getFeatures(QgsFeatureRequest().setFilterFid(id))
+                    ft = next(iterator)
+                    geom = ft.geometry().asPolyline()
+                    #add vertices
+                    geom.append(pt)
+                    pr = self.lines_layer.dataProvider()
+                    pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
+                    self.canvas.refresh()
+                    self.rub_rect_anchor.reset()
+                    self.rub_rect_anchor.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
+                    self.rub_rect_anchor.setColor(QColor(0,255,0,50))
+                    self.rub_rect_anchor.setWidth(2)
             else :
-                pt = QgsPoint(point)
+                pr = self.lines_layer.dataProvider()
                 ids = [i.id() for i in self.lines_layer.getFeatures()]
                 id = ids[-1]
                 iterator = self.lines_layer.getFeatures(QgsFeatureRequest().setFilterFid(id))
                 ft = next(iterator)
                 geom = ft.geometry().asPolyline()
-                #add vertices
-                geom.append(pt)
-                pr = self.lines_layer.dataProvider()
-                pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
-                self.canvas.refresh()
+                self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
+                self.rub_rect_anchors.setColor(QColor(0,255,0,50))
+                self.rub_rect_anchors.setWidth(2)
+                if pr.fieldNameIndex('length') == -1 :
+                    pr.addAttributes([QgsField('length', QVariant.Double,"double",6,1)] )
+                    self.lines_layer.updateFields()
+                expression= QgsExpression("$length")
+                index=self.lines_layer.fieldNameIndex("length")
+                value = expression.evaluate(ft)
+                self.lines_layer.changeAttributeValue(ft.id(),index,value)
+                self.lines_layer.commitChanges()
+                self.lines_layer.startEditing()
+                self.reset()
+                self.callback('', '', '', '')
+        #Right click
         else :
+            if self.edit == True :
+                    pt = QgsPoint(point)
+                    ids = [i.id() for i in self.lines_layer.getFeatures()]
+                    id = ids[-1]
+                    iterator = self.lines_layer.getFeatures(QgsFeatureRequest().setFilterFid(id))
+                    ft = next(iterator)
+                    geom = ft.geometry().asPolyline()
+                    #add vertices
+                    geom.append(pt)
+                    pr = self.lines_layer.dataProvider()
+                    pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
+                    self.canvas.refresh()
+                    self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
+                    self.rub_rect_anchors.setColor(QColor(0,255,0,50))
+                    self.rub_rect_anchors.setWidth(2)
+                    if pr.fieldNameIndex('length') == -1 :
+                        pr.addAttributes([QgsField('length', QVariant.Double,"double",6,1)] )
+                        self.lines_layer.updateFields()
+                    expression= QgsExpression("$length")
+                    index=self.lines_layer.fieldNameIndex("length")
+                    value = expression.evaluate(ft)
+                    self.lines_layer.changeAttributeValue(ft.id(),index,value)
+                    self.lines_layer.commitChanges()
+                    self.lines_layer.startEditing()
             self.reset()
-            self.callback('', '', '', '')
-        return None
-    
-    def canvasDoubleClickEvent(self,e):
-        point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(), e.pos().y())
-        pt = QgsPoint(point)
-        ids = [i.id() for i in self.lines_layer.getFeatures()]
-        id = ids[-1]
-        iterator = self.lines_layer.getFeatures(QgsFeatureRequest().setFilterFid(id))
-        ft = next(iterator)
-        geom = ft.geometry().asPolyline()
-        #add vertices
-        geom.append(pt)
-        pr = self.lines_layer.dataProvider()
-        pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
-        self.canvas.refresh()
-        self.edit = False
+            self.callback('', '', '', '')        
+            
         return None
     
     def reset(self) :
@@ -157,11 +173,36 @@ class SlopeMapTool(QgsMapTool):
         self.length = None
         self.rub_polyline.reset()
         self.rub_rect.reset()
+        self.rub_rect_anchor.reset()
     
-    def desactivate(self) :
+    def deactivate(self) :
         self.rub_polyline.reset()
         self.rub_rect.reset()
+        self.rub_rect_anchor.reset()
+        self.rub_rect_anchors.reset()
+        self.rub_cursor.reset()
+        self.lines_layer.updateFields()
+        self.lines_layer.commitChanges()
     
+    def keyPressEvent(self,e):
+        back_value = u'\x08'
+        if e.text() == back_value :
+            if self.edit == True :
+                #delete last point
+                ids = [i.id() for i in self.lines_layer.getFeatures()]
+                id = ids[-1]
+                iterator = self.lines_layer.getFeatures(QgsFeatureRequest().setFilterFid(id))
+                ft = next(iterator)
+                geom = ft.geometry().asPolyline()
+                del geom[-1]
+                self.point1coord = geom[-1]
+                pr = self.lines_layer.dataProvider()
+                pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
+                self.canvas.refresh()
+                self.rubDisplayUp()
+                #actualize rub_rect_anchor
+                self.rub_rect_anchor.reset()
+                self.rub_rect_anchor.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20),None)
     
     #Do the slope calc
     def slopeCalc(self, sP, eP) :
@@ -264,4 +305,27 @@ class SlopeMapTool(QgsMapTool):
             # cSlope=None
         return a_slope, c_left_slope, c_right_slope, dist_seg
 
+    def rubDisplayUp(self) :
+        self.rub_polyline.reset()
+        self.rub_rect.reset()
+        x1, y1 = self.point1coord
+        x2, y2 = self.point2coord
+        points = [ QgsPoint(x1,y1),QgsPoint(x2,y2)]
+        self.rub_polyline.addGeometry(QgsGeometry.fromPolyline(points), None)
+        self.rub_polyline.setWidth(2)
+        if self.length < self.max_length :
+            if self.a_slope < self.tolerated_slope and self.a_slope > -(self.tolerated_slope) :
+                self.rub_polyline.setColor(QColor(0, 255, 0))
+            else :
+                self.rub_polyline.setColor(QColor(255, 0, 0))
+        else :
+            if self.a_slope < self.tolerated_slope and self.a_slope > -(self.tolerated_slope) :
+                self.rub_polyline.setColor(QColor(101, 166, 101))
+            else :
+                self.rub_polyline.setColor(QColor(130, 54, 54))
+        
+        self.rub_rect.addGeometry(QgsGeometry.fromPolyline(points).buffer(self.swath_distance,20),None)
+        # self.rub_rect.setFillColor(QColor(0,255,0,50))
+        self.rub_rect.setColor(QColor(0,255,0,50))
+        return None
 
