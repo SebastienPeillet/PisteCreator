@@ -72,11 +72,13 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
         self.ConfigParser.read(configFilePath)
         self.sideDistSpinBox.setValue(self.ConfigParser.getint('calculation_variable', 'side_distance'))
         self.toleratedSlopeSpinBox.setValue(self.ConfigParser.getint('graphical_visualisation', 'tolerated_slope'))
+        self.maxLengthSpinBox.setValue(self.ConfigParser.getint('graphical_visualisation', 'max_length'))
         self.swathDistSpinBox.setValue(self.ConfigParser.getint('graphical_visualisation', 'swath_distance'))
             
     def saveconfig(self) :
         self.ConfigParser.set('calculation_variable', 'side_distance', self.sideDistSpinBox.value())
         self.ConfigParser.set('graphical_visualisation', 'tolerated_slope', self.toleratedSlopeSpinBox.value())
+        self.ConfigParser.set('graphical_visualisation', 'max_length', self.maxLengthSpinBox.value())
         self.ConfigParser.set('graphical_visualisation', 'swath_distance', self.swathDistSpinBox.value())
         with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'option.cfg'),'wb') as configfile:
             self.ConfigParser.write(configfile)

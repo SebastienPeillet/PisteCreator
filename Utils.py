@@ -30,31 +30,34 @@ import math
 import time
 
 class SlopeMapTool(QgsMapTool):
-    def __init__(self,iface, callback, lines_layer, dem, side_distance, tolerated_slope, swath_distance):
+    def __init__(self,iface, callback, lines_layer, dem, side_distance, tolerated_slope, max_length, swath_distance):
         QgsMapTool.__init__(self, iface.mapCanvas())
-        self.iface            = iface
-        self.callback         = callback
-        self.canvas           = iface.mapCanvas()
-        # self.trackslayer    = trackslayer
-        self.dem              = dem
-        self.lines_layer      = lines_layer
-        self.side_distance    = side_distance
-        self.max_length       = 50
-        self.tolerated_slope  = tolerated_slope
-        self.swath_distance   = swath_distance
-        self.edit             = False
-        self.point1coord      = None
-        self.point2coord      = None
-        self.a_slope          = None
-        self.c_left_slope     = None
-        self.c_right_slope    = None
-        # self.cSlope         = None
-        self.length           = None
-        self.rub_polyline     = QgsRubberBand(self.canvas, False)
-        self.rub_rect         = QgsRubberBand(self.canvas, True)
-        self.rub_rect_anchor  = QgsRubberBand(self.canvas, True)
-        self.rub_rect_anchors = QgsRubberBand(self.canvas, True)
-        self.rub_cursor       = QgsRubberBand(self.canvas, True)
+        self.iface              = iface
+        self.callback           = callback
+        self.canvas             = iface.mapCanvas()
+        self.dem                = dem
+        self.lines_layer        = lines_layer
+        self.line_geom          = None
+        self.aslope_list        = []
+        self.c_left_slope_list  = []
+        self.c_right_slope_list = []
+        self.side_distance      = side_distance
+        self.max_length         = max_length
+        self.tolerated_slope    = tolerated_slope
+        self.swath_distance     = swath_distance
+        self.edit               = False
+        self.point1coord        = None
+        self.point2coord        = None
+        self.a_slope            = None
+        self.c_left_slope       = None
+        self.c_right_slope      = None
+        # self.cSlope           = None
+        self.length             = None
+        self.rub_polyline       = QgsRubberBand(self.canvas, False)
+        self.rub_rect           = QgsRubberBand(self.canvas, True)
+        self.rub_rect_anchor    = QgsRubberBand(self.canvas, True)
+        self.rub_rect_anchors   = QgsRubberBand(self.canvas, True)
+        self.rub_cursor         = QgsRubberBand(self.canvas, True)
         return None
         
     #Event when user move the mouse : it will define a second point and launch slopeCalc function.
@@ -68,7 +71,7 @@ class SlopeMapTool(QgsMapTool):
         
         if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord :
             self.a_slope, self.c_left_slope, self.c_right_slope, self.length = self.slopeCalc(self.point1coord, self.point2coord)
-        self.callback(self.a_slope, self.c_left_slope, self.c_right_slope, self.length)
+        self.callback(self.a_slope, self.c_left_slope, self.c_right_slope, self.length, self.line_geom, self.aslope_list, self.c_left_slope_list, self.c_right_slope_list, False)
         
         if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord :
             self.rubDisplayUp()
@@ -92,6 +95,10 @@ class SlopeMapTool(QgsMapTool):
                     pr = self.lines_layer.dataProvider()
                     pr.addFeatures([ft])
                     
+                    self.aslope_list.append(0)
+                    self.c_left_slope_list.append(0)
+                    self.c_right_slope_list.append(0)
+                    
                     self.edit = True
                     self.canvas.refresh()
                     
@@ -104,6 +111,11 @@ class SlopeMapTool(QgsMapTool):
                     geom = ft.geometry().asPolyline()
                     #add vertices
                     geom.append(pt)
+                    self.line_geom = geom
+                    self.aslope_list.append(math.fabs(self.a_slope))
+                    self.c_left_slope_list.append(math.fabs(self.c_left_slope))
+                    self.c_right_slope_list.append(math.fabs(self.c_right_slope))
+                    self.callback(self.a_slope, self.c_left_slope, self.c_right_slope, self.length, self.line_geom, self.aslope_list, self.c_left_slope_list, self.c_right_slope_list, True)
                     pr = self.lines_layer.dataProvider()
                     pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
                     self.canvas.refresh()
@@ -131,7 +143,7 @@ class SlopeMapTool(QgsMapTool):
                 self.lines_layer.commitChanges()
                 self.lines_layer.startEditing()
                 self.reset()
-                self.callback('', '', '', '')
+                self.callback('', '', '', '', self.line_geom, self.aslope_list, self.c_left_slope_list, self.c_right_slope_list, False)
         #Right click
         else :
             if self.edit == True :
@@ -143,6 +155,11 @@ class SlopeMapTool(QgsMapTool):
                     geom = ft.geometry().asPolyline()
                     #add vertices
                     geom.append(pt)
+                    self.line_geom = geom
+                    self.aslope_list.append(math.fabs(self.a_slope))
+                    self.c_left_slope_list.append(math.fabs(self.c_left_slope))
+                    self.c_right_slope_list.append(math.fabs(self.c_right_slope))
+                    self.callback(self.a_slope, self.c_left_slope, self.c_right_slope, self.length, self.line_geom, self.aslope_list, self.c_left_slope_list, self.c_right_slope_list, True)
                     pr = self.lines_layer.dataProvider()
                     pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
                     self.canvas.refresh()
@@ -159,18 +176,22 @@ class SlopeMapTool(QgsMapTool):
                     self.lines_layer.commitChanges()
                     self.lines_layer.startEditing()
             self.reset()
-            self.callback('', '', '', '')        
+            self.callback('', '', '', '', self.line_geom, self.aslope_list, self.c_left_slope_list, self.c_right_slope_list, False)        
             
         return None
     
     def reset(self) :
-        self.edit = False
-        self.point1coord = None
-        self.point2coord = None
-        self.a_slope = None
-        self.c_left_slope = None
-        self.c_right_slope = None
-        self.length = None
+        self.edit                   = False
+        self.line_geom              = None
+        self.point1coord            = None
+        self.point2coord            = None
+        self.a_slope                = None
+        self.c_left_slope           = None
+        self.c_right_slope          = None
+        self.length                 = None
+        self.aslope_list            = []
+        self.c_left_slope_list      = []
+        self.c_right_slope_list     = []
         self.rub_polyline.reset()
         self.rub_rect.reset()
         self.rub_rect_anchor.reset()
@@ -195,7 +216,12 @@ class SlopeMapTool(QgsMapTool):
                 ft = next(iterator)
                 geom = ft.geometry().asPolyline()
                 del geom[-1]
+                self.line_geom = geom
+                del self.aslope_list[-1]
+                del self.c_left_slope_list[-1]
+                del self.c_right_slope_list[-1]
                 self.point1coord = geom[-1]
+                self.callback('', '', '', '', self.line_geom, self.aslope_list, self.c_left_slope_list, self.c_right_slope_list, True)
                 pr = self.lines_layer.dataProvider()
                 pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
                 self.canvas.refresh()

@@ -21,7 +21,7 @@
  ***************************************************************************/
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, QFileInfo
-from PyQt4.QtGui import QAction, QIcon, QFileDialog
+from PyQt4.QtGui import QAction, QIcon, QFileDialog, QGraphicsView, QGraphicsScene
 from qgis.gui import *
 from qgis.core import *
 # Initialize Qt resources from file resources.py
@@ -30,6 +30,7 @@ import resources
 # Import the code for the DockWidget
 from PisteCreator_dockwidget import PisteCreatorDockWidget
 from option_Dock import OptionDock
+from slope_graph import SlopeGraphicsView
 import os.path
 
 from Utils import *
@@ -81,6 +82,7 @@ class PisteCreator:
         self.pluginIsActive = False
         self.dockwidget = None
         self.optionDock = None
+        self.graph_widget = None
         self.vect_list = []
         self.rast_list = []
         self.ConfigParser = None
@@ -187,6 +189,8 @@ class PisteCreator:
         self.dockwidget = PisteCreatorDockWidget()
         self.listVectLayer()
         self.listRastLayer()
+        self.graph_widget = SlopeGraphicsView()
+        self.dockwidget.graphLayout.addWidget(self.graph_widget,0,0)
         # self.dockwidget.DEMButton.clicked.connect(self.selectDemFile)
         self.dockwidget.TracksButton.clicked.connect(self.listVectLayer)
         self.dockwidget.DEMButton.clicked.connect(self.listRastLayer)
@@ -263,6 +267,7 @@ class PisteCreator:
         self.dockwidget.DEMInput.addItems(layer_list)
 
     def slopeCalc(self):
+        ct=None
         #1 Get the vector layer
         layers = self.iface.legendInterface().layers()
         selected_lignes = self.dockwidget.TracksInput.currentIndex()
@@ -289,13 +294,14 @@ class PisteCreator:
         self.ConfigParser.read(configFilePath)
         side_distance = self.ConfigParser.getint('calculation_variable', 'side_distance')
         tolerated_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_slope')
+        max_length = self.ConfigParser.getint('graphical_visualisation', 'max_length')
         swath_distance = self.ConfigParser.getint('graphical_visualisation', 'swath_distance')
         
         #4 Activate Maptools
-        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_slope, swath_distance);
+        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_slope, max_length, swath_distance)
         self.iface.mapCanvas().setMapTool(ct)
     
-    def displayXY(self,a,b,c,d):
+    def displayXY(self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw):
         if a != None :
             self.dockwidget.AlongResult.setText(str(a)+'%')
         if b != None :
@@ -304,6 +310,21 @@ class PisteCreator:
             self.dockwidget.RightCrossResult.setText(str(c)+'%')
         if d != None :
             self.dockwidget.LengthResult.setText(str(d))
+        if graph_draw == True :
+            self.updateGraph(geom, a_slope, c_l_slope, c_r_slope)
+    
+    def updateGraph(self, geom, a_slope, c_l_slope, c_r_slope) :
+        length = 0
+        length_list = [0]
+        len_geom = len(geom)
+        for i in range(0,len_geom-1) :
+            if i+1 <=len_geom :
+                pt1 = geom[i]
+                pt2 = geom[i+1]
+                azimuth = pt1.azimuth(pt2)
+                length += math.sqrt(pt1.sqrDist(pt2))
+                length_list.append(length)
+        self.graph_widget.plot(length_list, a_slope, c_l_slope, c_r_slope)
         
     def openOption(self):
         self.optionDock = OptionDock()
