@@ -6,7 +6,7 @@
  Tools to calculate along and cross slope for road
 							  -------------------
 		begin				 : 2017-03-22
-		git sha				 : 2017-06-20:11
+		git sha				 : 2017-07-07
 		copyright			 : (C) 2017 by Peillet Sebastien
 		email				 : peillet.seb@gmail.com
  ***************************************************************************/
@@ -64,6 +64,7 @@ class SlopeMapTool(QgsMapTool):
     def canvasMoveEvent(self,e):        
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(), e.pos().y())
         self.point2coord = point
+        
         self.rub_cursor.reset()
         self.rub_cursor.addGeometry(QgsGeometry.fromPoint(QgsPoint(self.point2coord[0], self.point2coord[1])).buffer(self.swath_distance,20),None)
         self.rub_cursor.setColor(QColor(0,255,0,50))
@@ -75,6 +76,8 @@ class SlopeMapTool(QgsMapTool):
         
         if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord :
             self.rubDisplayUp()
+
+
         return None
     
     def canvasReleaseEvent(self,e):
