@@ -18,13 +18,14 @@ Download the entire folder and copy it in the following folder :
 ## How to use
 
 Input :
-    - tracks layer
-    - DEM layer
+- tracks layer.
+- DEM layer
+
 Option dock to set :
-    - side distance to process cross slope (in meters)
-    - slope threshold (in percent) for graphic visualisation (green/red)
-    - maximum distance recommended (give a gray tint if overstepped)
-    - swath distance (length cable used on skidder in lumbering )
+- side distance to process cross slope (in meters)
+- slope threshold (in percent) for graphic visualisation (green/red)
+- maximum distance recommended (give a gray tint if overstepped)
+- swath distance (length cable used on skidder in lumbering )
 
 Left click : add a new vertice to the polyline entity.
 Right click or double click : add a new vertice and end the polyline.
