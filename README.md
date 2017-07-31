@@ -1,10 +1,14 @@
 # PisteCreator
 ONF GUI plugins to create tracks
 
-In French Guyana forest, it's not easy to lead engine deep into the wood. The rainy season challenges the earthworks and the tracks degrades, due to the water runoff on inclined tracks.
-This tool help to avoid tilted tracks uring the tracks planification.
+In French Guyana forest, it's not easy to lead engines deep into the wood. The rainy season challenges the earthworks and the tracks degrades, due to the water runoff on inclined tracks. Field operator have to plane the road access for every step in lumbering (cutting, skidding, on-site processing and trees loading onto trucks). During last decades, forestry operators tried to improve their technics to cause less environmental impact and to conform to ecolabel requirements.
+This tool help to avoid tilted tracks during the tracks planification.
 
-I developped the plugin with the 2.16.0 Qgis version, I will check for compatibilty later, for long term version (and maybe for Qgis 3 in the future). It add a new maptool that will help the user to keep reasonable declivity when he edits the tracks layers
+Qgis compatibility check :
+- 2.14.12
+- 2.16.0
+- 2.18.3
+It add a new maptool that will help the user to keep reasonable declivity when he edits the tracks layers.
 
 ## Install
 
@@ -13,14 +17,20 @@ Download the entire folder and copy it in the following folder :
 
 ## How to use
 
-You need to enter the tracks layer and the DEM into the formular and then click on the 'Edit' button to begin edition.
+Input :
+    - tracks layer
+    - DEM layer
+Option dock to set :
+    - side distance to process cross slope (in meters)
+    - slope threshold (in percent) for graphic visualisation (green/red)
+    - maximum distance recommended (give a gray tint if overstepped)
+    - swath distance (length cable used on skidder in lumbering )
 
-A click does a vertice to te polyline entity. After you create the first vertice, the slope informations will appear into the formular when you move the cursor. A double click will ends the polyline.
+Left click : add a new vertice to the polyline entity.
+Right click or double click : add a new vertice and end the polyline.
+
+After you create the first vertice, the slope informations will appear into the formular when you move the cursor.
+The chart gives data visualisation (with matplotlib).
 
 ## To come
-
-- Editing attributes table during creation
 - Enable snap edition
-- Permit to change the distance to get elevation point on each side of the line. Default : 15 meters (Utils.py, line 150)
-- Show the line that will be create before click
-- probably other
