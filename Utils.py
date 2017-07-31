@@ -30,11 +30,12 @@ import math
 import time
 
 class SlopeMapTool(QgsMapTool):
-    def __init__(self,iface, callback, lines_layer, dem, side_distance, tolerated_slope, max_length, swath_distance):
+    def __init__(self,iface, callback, lines_layer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance):
         QgsMapTool.__init__(self, iface.mapCanvas())
         self.iface              = iface
         self.callback           = callback
         self.canvas             = iface.mapCanvas()
+        self.map_tool_name      = 'SlopeMapTool'
         self.dem                = dem
         self.lines_layer        = lines_layer
         self.line_geom          = None
@@ -43,7 +44,8 @@ class SlopeMapTool(QgsMapTool):
         self.c_right_slope_list = []
         self.side_distance      = side_distance
         self.max_length         = max_length
-        self.tolerated_slope    = tolerated_slope
+        self.tolerated_a_slope  = tolerated_a_slope
+        self.tolerated_c_slope  = tolerated_c_slope
         self.swath_distance     = swath_distance
         self.edit               = False
         self.point1coord        = None
@@ -218,20 +220,25 @@ class SlopeMapTool(QgsMapTool):
                 iterator = self.lines_layer.getFeatures(QgsFeatureRequest().setFilterFid(id))
                 ft = next(iterator)
                 geom = ft.geometry().asPolyline()
-                del geom[-1]
-                self.line_geom = geom
-                del self.aslope_list[-1]
-                del self.c_left_slope_list[-1]
-                del self.c_right_slope_list[-1]
-                self.point1coord = geom[-1]
-                self.callback('', '', '', '', self.line_geom, self.aslope_list, self.c_left_slope_list, self.c_right_slope_list, True)
-                pr = self.lines_layer.dataProvider()
-                pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
-                self.canvas.refresh()
-                self.rubDisplayUp()
-                #actualize rub_rect_anchor
-                self.rub_rect_anchor.reset()
-                self.rub_rect_anchor.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20),None)
+                if len(geom) > 1 :
+                    del geom[-1]
+                    self.line_geom = geom
+                    del self.aslope_list[-1]
+                    del self.c_left_slope_list[-1]
+                    del self.c_right_slope_list[-1]
+                    self.point1coord = geom[-1]
+                    self.callback('', '', '', '', self.line_geom, self.aslope_list, self.c_left_slope_list, self.c_right_slope_list, True)
+                    pr = self.lines_layer.dataProvider()
+                    pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
+                    self.canvas.refresh()
+                    self.rubDisplayUp()
+                    #actualize rub_rect_anchor
+                    self.rub_rect_anchor.reset()
+                    self.rub_rect_anchor.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20),None)
+                else :
+                    self.lines_layer.deleteFeature(id)
+                    self.reset()
+                    self.canvas.refresh()
     
     #Do the slope calc
     def slopeCalc(self, sP, eP) :
@@ -343,12 +350,12 @@ class SlopeMapTool(QgsMapTool):
         self.rub_polyline.addGeometry(QgsGeometry.fromPolyline(points), None)
         self.rub_polyline.setWidth(2)
         if self.length < self.max_length :
-            if self.a_slope < self.tolerated_slope and self.a_slope > -(self.tolerated_slope) :
+            if self.a_slope < self.tolerated_a_slope and self.a_slope > -(self.tolerated_a_slope) :
                 self.rub_polyline.setColor(QColor(0, 255, 0))
             else :
                 self.rub_polyline.setColor(QColor(255, 0, 0))
         else :
-            if self.a_slope < self.tolerated_slope and self.a_slope > -(self.tolerated_slope) :
+            if self.a_slope < self.tolerated_a_slope and self.a_slope > -(self.tolerated_a_slope) :
                 self.rub_polyline.setColor(QColor(101, 166, 101))
             else :
                 self.rub_polyline.setColor(QColor(130, 54, 54))

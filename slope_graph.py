@@ -28,7 +28,28 @@ from PyQt4.QtCore import pyqtSignal
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-import random
+import ConfigParser
+
+class GrumpyConfigParser(ConfigParser.ConfigParser):
+  """Virtually identical to the original method, but delimit keys and values with '=' instead of ' = '"""
+  def write(self, fp):
+        if self._defaults:
+            fp.write("[%s]\n" % DEFAULTSECT)
+            for (key, value) in self._defaults.items():
+                fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
+            fp.write("\n")
+        for section in self._sections:
+            fp.write("[%s]\n" % section)
+            for (key, value) in self._sections[section].items():
+                if key == "__name__":
+                    continue
+                if (value is not None) or (self._optcre == self.OPTCRE):
+
+                    # This is the important departure from ConfigParser for what you are looking for
+                    key = "=".join((key, str(value).replace('\n', '\n\t')))
+
+                fp.write("%s\n" % (key))
+        fp.write("\n")
 
 class SlopeGraphicsView(QtGui.QDialog):
 
@@ -42,24 +63,31 @@ class SlopeGraphicsView(QtGui.QDialog):
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.canvas)
         self.setLayout(layout)
+        self.ConfigParser = None
+        self.tolerated_slope = None
+        self.initPars()
         self.initplot()
-        
+
+    def initPars(self) :
+        self.ConfigParser = GrumpyConfigParser()
+        self.ConfigParser.optionxform = str
+        configFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'option.cfg')
+        self.ConfigParser.read(configFilePath)
+        self.tolerated_a_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_a_slope')    
+        self.tolerated_c_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_c_slope')    
     
     def initplot(self):
         ''' plot some random stuff '''
         # create an axis
         ax = self.figure.add_subplot(111)
-
-        # discards the old graph
-        # ax.hold(False)
+        
 
         # plot data
         ax.set_xlim(0,50)
-        ax.set_ylim(0,20)
+        ax.set_ylim(0,self.tolerated_a_slope+10)
         ax.set_xlabel('length')
-        ax.plot([0,50],[10,10],'-',color='red')
-        ax.plot([0,50],[4,4],'-',color='green')
-        # ax.plot(x_list,y_list, '*-')
+        ax.set_ylabel('slope(%)')
+        ax.plot([0,50],[self.tolerated_a_slope,self.tolerated_a_slope],'r-',[0,50],[self.tolerated_c_slope,self.tolerated_c_slope],'g-')
 
         # refresh canvas
         self.canvas.draw()
@@ -76,15 +104,15 @@ class SlopeGraphicsView(QtGui.QDialog):
         
         xmin,xmax = ax.get_xbound()
         ymin,ymax = ax.get_ybound()
-        if ymax < 20 :
-            ax.set_ylim(0,20)
+        if ymax < self.tolerated_a_slope+10 :
+            ax.set_ylim(0,self.tolerated_a_slope+10)
         else :
             ax.set_ylim(0,ymax+1)
         ax.set_xlim(0,xmax+10)
-        ax.add_line(Line2D([0,xmax+10],[10,10],color='red'))
-        ax.add_line(Line2D([0,xmax+10],[4,4],color='green'))
+        ax.add_line(Line2D([0,xmax+10],[self.tolerated_a_slope,self.tolerated_a_slope],color='red'))
+        ax.add_line(Line2D([0,xmax+10],[self.tolerated_c_slope,self.tolerated_c_slope],color='green'))
         ax.set_xlabel('length')
-        ax.set_ylabel('along slope(%)')
+        ax.set_ylabel('slope(%)')
         # refresh canvas
         self.canvas.draw()
 

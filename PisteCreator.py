@@ -215,7 +215,7 @@ class PisteCreator:
         # Commented next statement since it causes QGIS crashe
         # when closing the docked window:
         # self.dockwidget = None
-
+        self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
         self.pluginIsActive = False
 
 
@@ -267,6 +267,7 @@ class PisteCreator:
         self.dockwidget.DEMInput.addItems(layer_list)
 
     def slopeCalc(self):
+        self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
         ct=None
         #1 Get the vector layer
         layers = self.iface.legendInterface().layers()
@@ -293,12 +294,13 @@ class PisteCreator:
         configFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'option.cfg')
         self.ConfigParser.read(configFilePath)
         side_distance = self.ConfigParser.getint('calculation_variable', 'side_distance')
-        tolerated_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_slope')
+        tolerated_a_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_a_slope')
+        tolerated_c_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_c_slope')
         max_length = self.ConfigParser.getint('graphical_visualisation', 'max_length')
         swath_distance = self.ConfigParser.getint('graphical_visualisation', 'swath_distance')
         
         #4 Activate Maptools
-        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_slope, max_length, swath_distance)
+        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance)
         self.iface.mapCanvas().setMapTool(ct)
     
     def displayXY(self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw):
@@ -327,7 +329,7 @@ class PisteCreator:
         self.graph_widget.plot(length_list, a_slope, c_l_slope, c_r_slope)
         
     def openOption(self):
-        self.optionDock = OptionDock()
+        self.optionDock = OptionDock(self, self.graph_widget,self.canvas)
         self.optionDock.show()
         return None
     #--------------------------------------------------------------------------

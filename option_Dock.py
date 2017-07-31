@@ -57,12 +57,15 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, plugin, graph_widget, canvas, parent=None):
         """Constructor."""
         super(OptionDock, self).__init__(parent)
         self.setupUi(self)
         self.ConfigParser = None
         self.initPars()
+        self.graph_widget = graph_widget
+        self.canvas = canvas
+        self.plugin = plugin
         self.saveButton.clicked.connect(self.saveconfig)
         
     def initPars(self) :
@@ -71,17 +74,26 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
         configFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'option.cfg')
         self.ConfigParser.read(configFilePath)
         self.sideDistSpinBox.setValue(self.ConfigParser.getint('calculation_variable', 'side_distance'))
-        self.toleratedSlopeSpinBox.setValue(self.ConfigParser.getint('graphical_visualisation', 'tolerated_slope'))
+        self.toleratedASlopeSpinBox.setValue(self.ConfigParser.getint('graphical_visualisation', 'tolerated_a_slope'))
+        self.toleratedCSlopeSpinBox.setValue(self.ConfigParser.getint('graphical_visualisation', 'tolerated_c_slope'))
         self.maxLengthSpinBox.setValue(self.ConfigParser.getint('graphical_visualisation', 'max_length'))
         self.swathDistSpinBox.setValue(self.ConfigParser.getint('graphical_visualisation', 'swath_distance'))
             
     def saveconfig(self) :
         self.ConfigParser.set('calculation_variable', 'side_distance', self.sideDistSpinBox.value())
-        self.ConfigParser.set('graphical_visualisation', 'tolerated_slope', self.toleratedSlopeSpinBox.value())
+        self.ConfigParser.set('graphical_visualisation', 'tolerated_a_slope', self.toleratedASlopeSpinBox.value())
+        self.ConfigParser.set('graphical_visualisation', 'tolerated_c_slope', self.toleratedCSlopeSpinBox.value())
         self.ConfigParser.set('graphical_visualisation', 'max_length', self.maxLengthSpinBox.value())
         self.ConfigParser.set('graphical_visualisation', 'swath_distance', self.swathDistSpinBox.value())
         with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'option.cfg'),'wb') as configfile:
             self.ConfigParser.write(configfile)
+        self.graph_widget.initPars()
+        self.graph_widget.plot([],[],[],[])
+        try :
+            if self.canvas.mapTool().map_tool_name == 'SlopeMapTool' :
+                self.plugin.slopeCalc()
+        except AttributeError :
+            pass
         self.close()
 
 
