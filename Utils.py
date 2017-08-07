@@ -58,7 +58,7 @@ class SlopeMapTool(QgsMapTool):
         self.rub_polyline       = QgsRubberBand(self.canvas, False)
         self.rub_rect           = QgsRubberBand(self.canvas, True)
         self.rub_rect_anchor    = QgsRubberBand(self.canvas, True)
-        self.rub_rect_anchors   = QgsRubberBand(self.canvas, True)
+        self.rub_rect_anchors   = self.rubInit()
         self.rub_cursor         = QgsRubberBand(self.canvas, True)
         return None
         
@@ -136,8 +136,6 @@ class SlopeMapTool(QgsMapTool):
                 ft = next(iterator)
                 geom = ft.geometry().asPolyline()
                 self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
-                self.rub_rect_anchors.setColor(QColor(0,255,0,50))
-                self.rub_rect_anchors.setWidth(2)
                 if pr.fieldNameIndex('length') == -1 :
                     pr.addAttributes([QgsField('length', QVariant.Double,"double",6,1)] )
                     self.lines_layer.updateFields()
@@ -169,8 +167,6 @@ class SlopeMapTool(QgsMapTool):
                     pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
                     self.canvas.refresh()
                     self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
-                    self.rub_rect_anchors.setColor(QColor(0,255,0,50))
-                    self.rub_rect_anchors.setWidth(2)
                     if pr.fieldNameIndex('length') == -1 :
                         pr.addAttributes([QgsField('length', QVariant.Double,"double",6,1)] )
                         self.lines_layer.updateFields()
@@ -365,3 +361,13 @@ class SlopeMapTool(QgsMapTool):
         self.rub_rect.setColor(QColor(0,255,0,50))
         return None
 
+    def rubInit(self) :
+        rubber = QgsRubberBand(self.canvas,True)
+        
+        tracks_layer = self.lines_layer
+        for track in tracks_layer.getFeatures() :
+            geom = track.geometry().asPolyline()
+            rubber.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20),None)
+        rubber.setColor(QColor(0,255,0,50))
+        rubber.setWidth(3)
+        return rubber
