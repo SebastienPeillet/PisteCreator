@@ -297,10 +297,12 @@ class PisteCreator:
         tolerated_a_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_a_slope')
         tolerated_c_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_c_slope')
         max_length = self.ConfigParser.getint('graphical_visualisation', 'max_length')
+        max_length_hold = self.ConfigParser.getboolean('graphical_visualisation', 'max_length_hold')
         swath_distance = self.ConfigParser.getint('graphical_visualisation', 'swath_distance')
+        swath_display = self.ConfigParser.getboolean('graphical_visualisation', 'swath_display')
         
         #4 Activate Maptools
-        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance)
+        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance, max_length_hold, swath_display)
         self.iface.mapCanvas().setMapTool(ct)
     
     def displayXY(self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw):

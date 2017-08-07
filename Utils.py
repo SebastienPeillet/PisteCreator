@@ -30,7 +30,7 @@ import math
 import time
 
 class SlopeMapTool(QgsMapTool):
-    def __init__(self,iface, callback, lines_layer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance):
+    def __init__(self,iface, callback, lines_layer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance, max_length_hold, swath_display):
         QgsMapTool.__init__(self, iface.mapCanvas())
         self.iface              = iface
         self.callback           = callback
@@ -55,36 +55,49 @@ class SlopeMapTool(QgsMapTool):
         self.c_right_slope      = None
         # self.cSlope           = None
         self.length             = None
-        self.rub_polyline       = QgsRubberBand(self.canvas, False)
-        self.rub_rect           = QgsRubberBand(self.canvas, True)
-        self.rub_rect_anchor    = QgsRubberBand(self.canvas, True)
-        self.rub_rect_anchors   = self.rubInit()
-        self.rub_cursor         = QgsRubberBand(self.canvas, True)
+        self.max_length_hold    = max_length_hold
+        self.swath_display      = swath_display
+        if self.swath_display == True :
+            self.rub_polyline       = self.rubPolylineInit()
+            self.rub_rect           = self.rubRectInit()
+            self.rub_rect_anchor    = self.rubAnchorInit()
+            self.rub_rect_anchors   = self.rubAnchorsInit()
+            self.rub_cursor         = self.rubCursorInit()
         return None
         
     #Event when user move the mouse : it will define a second point and launch slopeCalc function.
     def canvasMoveEvent(self,e):        
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(), e.pos().y())
-        self.point2coord = point
+        if self.max_length_hold == True and self.point1coord != None :
+            pt1 = QgsPoint(self.point1coord)
+            x1,y1 = self.point1coord
+            pt2 = QgsPoint(point)
+            azimuth = pt1.azimuth(pt2)
+            xv = math.sin(math.radians(azimuth))*self.max_length
+            yv = math.cos(math.radians(azimuth))*self.max_length
+            x2 = x1+xv
+            y2 = y1+yv
+            self.point2coord = QgsPoint(x2,y2)
+            print self.point2coord
+        else:
+            self.point2coord = point
         
-        self.rub_cursor.reset()
-        self.rub_cursor.addGeometry(QgsGeometry.fromPoint(QgsPoint(self.point2coord[0], self.point2coord[1])).buffer(self.swath_distance,20),None)
-        self.rub_cursor.setColor(QColor(0,255,0,50))
-        self.rub_cursor.setWidth(2)
+        if self.swath_display == True :
+            self.rub_cursor.reset()
+            self.rub_cursor.addGeometry(QgsGeometry.fromPoint(QgsPoint(self.point2coord[0], self.point2coord[1])).buffer(self.swath_distance,20),None)
         
         if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord :
             self.a_slope, self.c_left_slope, self.c_right_slope, self.length = self.slopeCalc(self.point1coord, self.point2coord)
         self.callback(self.a_slope, self.c_left_slope, self.c_right_slope, self.length, self.line_geom, self.aslope_list, self.c_left_slope_list, self.c_right_slope_list, False)
         
-        if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord :
+        if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord and self.swath_display == True :
             self.rubDisplayUp()
-
 
         return None
     
     def canvasReleaseEvent(self,e):
         previousPoint = self.point1coord
-        point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(),e.pos().y())
+        point = self.point2coord
         self.point1coord = point
         
         #Left click
@@ -124,10 +137,9 @@ class SlopeMapTool(QgsMapTool):
                     pr = self.lines_layer.dataProvider()
                     pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
                     self.canvas.refresh()
-                    self.rub_rect_anchor.reset()
-                    self.rub_rect_anchor.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
-                    self.rub_rect_anchor.setColor(QColor(0,255,0,50))
-                    self.rub_rect_anchor.setWidth(2)
+                    if self.swath_display == True :
+                        self.rub_rect_anchor.reset()
+                        self.rub_rect_anchor.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
             else :
                 pr = self.lines_layer.dataProvider()
                 ids = [i.id() for i in self.lines_layer.getFeatures()]
@@ -135,7 +147,8 @@ class SlopeMapTool(QgsMapTool):
                 iterator = self.lines_layer.getFeatures(QgsFeatureRequest().setFilterFid(id))
                 ft = next(iterator)
                 geom = ft.geometry().asPolyline()
-                self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
+                if self.swath_display == True :
+                    self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
                 if pr.fieldNameIndex('length') == -1 :
                     pr.addAttributes([QgsField('length', QVariant.Double,"double",6,1)] )
                     self.lines_layer.updateFields()
@@ -166,7 +179,8 @@ class SlopeMapTool(QgsMapTool):
                     pr = self.lines_layer.dataProvider()
                     pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
                     self.canvas.refresh()
-                    self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
+                    if self.swath_display == True :
+                        self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
                     if pr.fieldNameIndex('length') == -1 :
                         pr.addAttributes([QgsField('length', QVariant.Double,"double",6,1)] )
                         self.lines_layer.updateFields()
@@ -193,16 +207,18 @@ class SlopeMapTool(QgsMapTool):
         self.aslope_list            = []
         self.c_left_slope_list      = []
         self.c_right_slope_list     = []
-        self.rub_polyline.reset()
-        self.rub_rect.reset()
-        self.rub_rect_anchor.reset()
+        if self.swath_display == True :
+            self.rub_polyline.reset()
+            self.rub_rect.reset()
+            self.rub_rect_anchor.reset()
     
     def deactivate(self) :
-        self.rub_polyline.reset()
-        self.rub_rect.reset()
-        self.rub_rect_anchor.reset()
-        self.rub_rect_anchors.reset()
-        self.rub_cursor.reset()
+        if self.swath_display == True :
+            self.rub_polyline.reset()
+            self.rub_rect.reset()
+            self.rub_rect_anchor.reset()
+            self.rub_rect_anchors.reset()
+            self.rub_cursor.reset()
         self.lines_layer.updateFields()
         self.lines_layer.commitChanges()
     
@@ -227,10 +243,12 @@ class SlopeMapTool(QgsMapTool):
                     pr = self.lines_layer.dataProvider()
                     pr.changeGeometryValues({ft.id():QgsGeometry.fromPolyline(geom)})
                     self.canvas.refresh()
-                    self.rubDisplayUp()
-                    #actualize rub_rect_anchor
-                    self.rub_rect_anchor.reset()
-                    self.rub_rect_anchor.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20),None)
+                    
+                    if self.swath_display == True :
+                        self.rubDisplayUp()
+                        #actualize rub_rect_anchor
+                        self.rub_rect_anchor.reset()
+                        self.rub_rect_anchor.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20),None)
                 else :
                     self.lines_layer.deleteFeature(id)
                     self.reset()
@@ -320,21 +338,7 @@ class SlopeMapTool(QgsMapTool):
         else :
             c_right_slope = ''
         
-        #point buff (old method)
-        # x_pointleft=xc+Xv
-        # y_pointleft=yc-Yv
-        # x_pointright=xc-Xv
-        # y_pointright=yc+Yv
-        # pointleft = QgsPoint(x_pointleft,y_pointleft)
-        # zLeftIdent = self.dem.dataProvider().identify(pointleft,QgsRaster.IdentifyFormatValue)
-        # zLeftValue = zLeftIdent.results()[1]
-        # pointright = QgsPoint(x_pointright,y_pointright)
-        # zRightIdent = self.dem.dataProvider().identify(pointright,QgsRaster.IdentifyFormatValue)
-        # zRightValue = zRightIdent.results()[1]
-        # if (zLeftValue != None and zRightValue != None and dist!=0) :
-            # cSlope=round(math.fabs(zLeftValue - zRightValue)/(dist*2)*100,2)
-        # else :
-            # cSlope=None
+
         return a_slope, c_left_slope, c_right_slope, dist_seg
 
     def rubDisplayUp(self) :
@@ -344,7 +348,6 @@ class SlopeMapTool(QgsMapTool):
         x2, y2 = self.point2coord
         points = [ QgsPoint(x1,y1),QgsPoint(x2,y2)]
         self.rub_polyline.addGeometry(QgsGeometry.fromPolyline(points), None)
-        self.rub_polyline.setWidth(2)
         if self.length < self.max_length :
             if self.a_slope < self.tolerated_a_slope and self.a_slope > -(self.tolerated_a_slope) :
                 self.rub_polyline.setColor(QColor(0, 255, 0))
@@ -357,17 +360,39 @@ class SlopeMapTool(QgsMapTool):
                 self.rub_polyline.setColor(QColor(130, 54, 54))
         
         self.rub_rect.addGeometry(QgsGeometry.fromPolyline(points).buffer(self.swath_distance,20),None)
-        # self.rub_rect.setFillColor(QColor(0,255,0,50))
         self.rub_rect.setColor(QColor(0,255,0,50))
         return None
 
-    def rubInit(self) :
+    def rubAnchorsInit(self) :
         rubber = QgsRubberBand(self.canvas,True)
         
         tracks_layer = self.lines_layer
         for track in tracks_layer.getFeatures() :
             geom = track.geometry().asPolyline()
             rubber.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20),None)
+        rubber.setColor(QColor(0,255,0,50))
+        rubber.setWidth(3)
+        return rubber
+
+    def rubAnchorInit(self) :
+        rubber = QgsRubberBand(self.canvas,True)
+        rubber.setColor(QColor(0,255,0,50))
+        rubber.setWidth(3)
+        return rubber
+    
+    def rubRectInit(self) :
+        rubber = QgsRubberBand(self.canvas,True)
+        rubber.setColor(QColor(0,255,0,50))
+        rubber.setWidth(3)
+        return rubber
+
+    def rubPolylineInit(self) :
+        rubber = QgsRubberBand(self.canvas,False)
+        rubber.setWidth(2)
+        return rubber
+        
+    def rubCursorInit(self) :
+        rubber = QgsRubberBand(self.canvas,True)
         rubber.setColor(QColor(0,255,0,50))
         rubber.setWidth(3)
         return rubber
