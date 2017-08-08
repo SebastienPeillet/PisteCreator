@@ -36,26 +36,33 @@ class SlopeMapTool(QgsMapTool):
         self.callback           = callback
         self.canvas             = iface.mapCanvas()
         self.map_tool_name      = 'SlopeMapTool'
+        
+        #Config variables
         self.dem                = dem
         self.lines_layer        = lines_layer
-        self.line_geom          = None
-        self.aslope_list        = []
-        self.c_left_slope_list  = []
-        self.c_right_slope_list = []
         self.side_distance      = side_distance
         self.max_length         = max_length
         self.tolerated_a_slope  = tolerated_a_slope
         self.tolerated_c_slope  = tolerated_c_slope
         self.swath_distance     = swath_distance
+        
+        #Chart variables
+        self.line_geom          = None
+        self.aslope_list        = []
+        self.c_left_slope_list  = []
+        self.c_right_slope_list = []
+        
+        #Geometric variables
         self.edit               = False
         self.point1coord        = None
         self.point2coord        = None
         self.a_slope            = None
         self.c_left_slope       = None
         self.c_right_slope      = None
-        # self.cSlope           = None
         self.length             = None
         self.max_length_hold    = max_length_hold
+        
+        #Rubber variables
         self.swath_display      = swath_display
         if self.swath_display == True :
             self.rub_polyline       = self.rubPolylineInit()
@@ -63,10 +70,15 @@ class SlopeMapTool(QgsMapTool):
             self.rub_rect_anchor    = self.rubAnchorInit()
             self.rub_rect_anchors   = self.rubAnchorsInit()
             self.rub_cursor         = self.rubCursorInit()
+            self.rub_buff_cursor    = self.rubBuffCursorInit()
+            
+        #Snap config
+        self.snapper = self.snapperDef()
         return None
         
     #Event when user move the mouse : it will define a second point and launch slopeCalc function.
-    def canvasMoveEvent(self,e):        
+    def canvasMoveEvent(self,e):
+        self.rub_cursor.removeLastPoint()
         point = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(), e.pos().y())
         if self.max_length_hold == True and self.point1coord != None :
             pt1 = QgsPoint(self.point1coord)
@@ -78,13 +90,20 @@ class SlopeMapTool(QgsMapTool):
             x2 = x1+xv
             y2 = y1+yv
             self.point2coord = QgsPoint(x2,y2)
-            print self.point2coord
         else:
             self.point2coord = point
+        snap = self.snapper.snapToMap(self.point2coord)
+        if snap.isValid() == True :
+            x, y = snap.point()
+            self.point2coord = QgsPoint(x, y)
+        self.rub_cursor.removeLastPoint()
+        # if self.rub_cursor.asGeometry().asPoint() == (0,0) :
+        self.rub_cursor.addPoint(self.point2coord)
+        # self.rub_cursor.movePoint(self.point2coord)
         
         if self.swath_display == True :
-            self.rub_cursor.reset()
-            self.rub_cursor.addGeometry(QgsGeometry.fromPoint(QgsPoint(self.point2coord[0], self.point2coord[1])).buffer(self.swath_distance,20),None)
+            self.rub_buff_cursor.reset()
+            self.rub_buff_cursor.addGeometry(QgsGeometry.fromPoint(QgsPoint(self.point2coord[0], self.point2coord[1])).buffer(self.swath_distance,20),None)
         
         if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord :
             self.a_slope, self.c_left_slope, self.c_right_slope, self.length = self.slopeCalc(self.point1coord, self.point2coord)
@@ -95,6 +114,7 @@ class SlopeMapTool(QgsMapTool):
 
         return None
     
+    #Event when user clicks with the mouse
     def canvasReleaseEvent(self,e):
         previousPoint = self.point1coord
         point = self.point2coord
@@ -195,6 +215,7 @@ class SlopeMapTool(QgsMapTool):
             
         return None
     
+    #When user ends a track
     def reset(self) :
         self.edit                   = False
         self.line_geom              = None
@@ -212,6 +233,7 @@ class SlopeMapTool(QgsMapTool):
             self.rub_rect.reset()
             self.rub_rect_anchor.reset()
     
+    #Event when user closes the plugin
     def deactivate(self) :
         if self.swath_display == True :
             self.rub_polyline.reset()
@@ -219,9 +241,11 @@ class SlopeMapTool(QgsMapTool):
             self.rub_rect_anchor.reset()
             self.rub_rect_anchors.reset()
             self.rub_cursor.reset()
+            self.rub_buff_cursor.reset()
         self.lines_layer.updateFields()
         self.lines_layer.commitChanges()
     
+    #Event when user uses 'backspace'
     def keyPressEvent(self,e):
         back_value = u'\x08'
         if e.text() == back_value :
@@ -349,12 +373,14 @@ class SlopeMapTool(QgsMapTool):
         points = [ QgsPoint(x1,y1),QgsPoint(x2,y2)]
         self.rub_polyline.addGeometry(QgsGeometry.fromPolyline(points), None)
         if self.length < self.max_length :
-            if self.a_slope < self.tolerated_a_slope and self.a_slope > -(self.tolerated_a_slope) :
+            if self.a_slope < self.tolerated_a_slope and self.a_slope > -(self.tolerated_a_slope) \
+                and self.c_left_slope < self.tolerated_c_slope and self.c_left_slope > -(self.tolerated_c_slope) \
+                and self.c_right_slope < self.tolerated_c_slope and self.c_right_slope > -(self.tolerated_c_slope) :
                 self.rub_polyline.setColor(QColor(0, 255, 0))
             else :
                 self.rub_polyline.setColor(QColor(255, 0, 0))
         else :
-            if self.a_slope < self.tolerated_a_slope and self.a_slope > -(self.tolerated_a_slope) :
+            if self.a_slope < self.tolerated_a_slope and self.a_slope > -(self.tolerated_a_slope) and self.c_left_slope < self.tolerated_c_slope and self.c_left_slope > -(self.tolerated_c_slope) and self.c_right_slope < self.tolerated_c_slope and self.c_right_slope > -(self.tolerated_c_slope) :
                 self.rub_polyline.setColor(QColor(101, 166, 101))
             else :
                 self.rub_polyline.setColor(QColor(130, 54, 54))
@@ -363,6 +389,8 @@ class SlopeMapTool(QgsMapTool):
         self.rub_rect.setColor(QColor(0,255,0,50))
         return None
 
+       
+    #RUBBERBANDS INIT FUNCTIONS
     def rubAnchorsInit(self) :
         rubber = QgsRubberBand(self.canvas,True)
         
@@ -392,7 +420,22 @@ class SlopeMapTool(QgsMapTool):
         return rubber
         
     def rubCursorInit(self) :
+        rubber = QgsRubberBand(self.canvas, geometryType=0)
+        rubber.setIcon(1)
+        rubber.setIconSize(12)
+        rubber.setWidth(2)
+        rubber.setColor(QColor(235, 10, 190, 255))
+        return rubber
+        
+    def rubBuffCursorInit(self) :
         rubber = QgsRubberBand(self.canvas,True)
         rubber.setColor(QColor(0,255,0,50))
         rubber.setWidth(3)
         return rubber
+    
+    #SNAP INIT FUNCTION
+    def snapperDef(self) :
+        snapper = QgsSnappingUtils()
+        snapper.readConfigFromProject()
+        snapper.setMapSettings(self.canvas.mapSettings())
+        return snapper
