@@ -24,6 +24,7 @@
 from qgis.core import *
 from qgis.gui import *
 from qgis.gui import QgsRubberBand
+from qgis.gui import QgsMapToolIdentify
 from PyQt4.QtGui import QColor
 from PyQt4.QtCore import QVariant
 import math
@@ -169,12 +170,26 @@ class SlopeMapTool(QgsMapTool):
                 geom = ft.geometry().asPolyline()
                 if self.swath_display == True :
                     self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
+                if pr.fieldNameIndex('id') == -1 :
+                    pr.addAttributes([QgsField('id', QVariant.Double,"double",6,1)] )
+                    self.lines_layer.updateFields()
+                id_max = 0
+                for feat in self.lines_layer.getFeatures():
+                    id = feat.attribute('id')
+                    if id != NULL :
+                        id_max = max(id_max,id)
+                new_id = int(id_max) + 1
+                index=self.lines_layer.fieldNameIndex("id")
+                self.lines_layer.changeAttributeValue(ft.id(),index,new_id)
+                self.lines_layer.commitChanges()
+                self.lines_layer.startEditing()
                 if pr.fieldNameIndex('length') == -1 :
                     pr.addAttributes([QgsField('length', QVariant.Double,"double",6,1)] )
                     self.lines_layer.updateFields()
                 expression= QgsExpression("$length")
                 index=self.lines_layer.fieldNameIndex("length")
                 value = expression.evaluate(ft)
+                self.lines_layer.changeAttributeValue(ft.id(),index,value)
                 self.lines_layer.changeAttributeValue(ft.id(),index,value)
                 self.lines_layer.commitChanges()
                 self.lines_layer.startEditing()
@@ -201,6 +216,19 @@ class SlopeMapTool(QgsMapTool):
                     self.canvas.refresh()
                     if self.swath_display == True :
                         self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
+                    if pr.fieldNameIndex('id') == -1 :
+                        pr.addAttributes([QgsField('id', QVariant.Double,"double",6,1)] )
+                        self.lines_layer.updateFields()
+                    id_max = 0
+                    for feat in self.lines_layer.getFeatures():
+                        id = feat.attribute('id')
+                        if id != NULL :
+                            id_max = max(id_max,id)
+                    new_id = int(id_max) + 1
+                    index=self.lines_layer.fieldNameIndex("id")
+                    self.lines_layer.changeAttributeValue(ft.id(),index,new_id)
+                    self.lines_layer.commitChanges()
+                    self.lines_layer.startEditing()
                     if pr.fieldNameIndex('length') == -1 :
                         pr.addAttributes([QgsField('length', QVariant.Double,"double",6,1)] )
                         self.lines_layer.updateFields()
@@ -307,7 +335,7 @@ class SlopeMapTool(QgsMapTool):
         #azimuth
         azimuth=sP.azimuth(eP)
         angle=azimuth-180
-        # TO DO : PUT dist AS USER INPUT
+
         dist=self.side_distance
         #vecteur directeur buff
         Xv= dist * math.cos(math.radians(angle))
@@ -439,3 +467,167 @@ class SlopeMapTool(QgsMapTool):
         snapper.readConfigFromProject()
         snapper.setMapSettings(self.canvas.mapSettings())
         return snapper
+
+class SelectMapTool(QgsMapTool):
+    def __init__(self,iface, callback, lines_layer, dem, side_distance):
+        QgsMapTool.__init__(self, iface.mapCanvas())
+        self.iface              = iface
+        self.callback           = callback
+        self.canvas             = iface.mapCanvas()
+        self.map_tool_name      = 'SelectMapTool'
+        
+        #Config variables
+        self.dem                = dem
+        self.lines_layer        = lines_layer
+        self.side_distance      = side_distance
+        
+        #Chart variables
+        self.line_geom          = None
+        self.aslope_list        = [0]
+        self.c_left_slope_list  = [0]
+        self.c_right_slope_list = [0]
+        
+        #Geometric variables
+        self.a_slope            = None
+        self.c_left_slope       = None
+        self.c_right_slope      = None
+        self.length             = None
+        
+        #Rubberband init
+        self.rub_polyline       = self.rubPolylineInit()
+        return None
+        
+    def identify(self,e):
+        self.reset()
+        pt = self.canvas.getCoordinateTransform().toMapPoint(e.pos().x(), e.pos().y())
+        scale = self.canvas.mapUnitsPerPixel()
+        pix_tol = 10
+        pt_geom = QgsGeometry().fromPoint(pt)
+        pt_geom = pt_geom.buffer(scale*pix_tol,20)
+        catch= False
+        result= None
+        geom = None
+        for ft in self.lines_layer.getFeatures() :
+            if pt_geom.intersects(ft.geometry()):
+                result = ft
+                break
+        if result:
+            geom = result.geometry().asPolyline()
+            self.rub_polyline.addGeometry(result.geometry(),self.lines_layer)
+            ln = len(geom)
+            id_error_list=[]
+            for i in range(0,ln-1) :
+                self.a_slope, self.c_left_slope, self.c_right_slope,self.length = self.slopeCalc(geom[i],geom[i+1])
+                if self.length != 0 :
+                    self.aslope_list.append(math.fabs(self.a_slope))
+                    self.c_left_slope_list.append(math.fabs(self.c_left_slope))
+                    self.c_right_slope_list.append(math.fabs(self.c_right_slope))
+                else :
+                    id_error_list.append(i+1)
+            if len(id_error_list) != 0 :
+                for id in id_error_list :
+                    del geom[id]
+        if geom :
+            self.callback(geom,self.aslope_list,self.c_left_slope_list,self.c_right_slope_list)
+    
+    def reset(self) :
+        self.line_geom              = None
+        self.aslope_list            = [0]
+        self.c_left_slope_list      = [0]
+        self.c_right_slope_list     = [0]
+        self.rub_polyline.reset()
+    
+    def slopeCalc(self, sP, eP) :
+        # #Retrieve coord
+        x1, y1 = sP
+        x2, y2 = eP
+        
+        # Along slope calculation
+        z_start_ident = self.dem.dataProvider().identify(sP, QgsRaster.IdentifyFormatValue)
+        z_start_value = z_start_ident.results()[1]
+        z_end_ident = self.dem.dataProvider().identify(eP, QgsRaster.IdentifyFormatValue)
+        z_end_value = z_end_ident.results()[1]
+        dist_seg = math.sqrt(sP.sqrDist(eP))
+
+        if (z_start_value != None and z_end_value != None and dist_seg != 0) :
+            # a_slope=math.fabs(z_start_value-z_end_value)/dist_seg*100
+            a_slope = round((z_end_value - z_start_value) / dist_seg * 100, 2)
+        else :
+            a_slope = ''
+        
+        # Cross slope calculation
+        #coord vector
+        xv = (x2-x1)
+        yv = (y2-y1)
+        #centre segment
+        xc = (x2-x1)/2+x1
+        yc = (y2-y1)/2+y1
+        #azimuth
+        azimuth=sP.azimuth(eP)
+        angle=azimuth-180
+        
+        dist=self.side_distance
+        #vecteur directeur buff
+        Xv= dist * math.cos(math.radians(angle))
+        Yv= dist * math.sin(math.radians(angle))
+        
+        #Center value
+        center_point = QgsPoint(xc, yc)
+        z_center_point_ident = self.dem.dataProvider().identify(center_point, QgsRaster.IdentifyFormatValue)
+        z_center_point_value = z_center_point_ident.results()[1]
+        
+        #Left side
+        x_pointleft_beg = x1 + Xv
+        y_pointleft_beg = y1 - Yv
+        x_pointleft_cen = xc + Xv
+        y_pointleft_cen = yc - Yv
+        x_pointleft_end = x2 + Xv
+        y_pointleft_end = y2 - Yv
+        
+        pointleft_beg = QgsPoint(x_pointleft_beg, y_pointleft_beg)
+        z_left_beg_ident = self.dem.dataProvider().identify(pointleft_beg, QgsRaster.IdentifyFormatValue)
+        z_left_beg_value = z_left_beg_ident.results()[1]
+        pointleft_cen = QgsPoint(x_pointleft_cen, y_pointleft_cen)
+        z_left_cen_ident = self.dem.dataProvider().identify(pointleft_cen, QgsRaster.IdentifyFormatValue)
+        z_left_cen_value = z_left_cen_ident.results()[1]
+        pointleft_end = QgsPoint(x_pointleft_end, y_pointleft_end)
+        z_left_end_ident = self.dem.dataProvider().identify(pointleft_end, QgsRaster.IdentifyFormatValue)
+        z_left_end_value = z_left_end_ident.results()[1]
+        if z_left_beg_value != None and z_start_value != None and z_left_cen_value != None and z_center_point_value != None and z_left_end_value != None and z_end_value != None and dist != 0 :
+            c_left_slope = round((((z_left_beg_value - z_start_value) + (z_left_cen_value - z_center_point_value) + (z_left_end_value - z_end_value)) / 3)/dist * 100, 2)
+        else :
+            c_left_slope = ''
+        
+        #Right side
+        x_pointright_beg = x1 - Xv
+        y_pointright_beg = y1 + Yv
+        x_pointright_cen = xc - Xv
+        y_pointright_cen = yc + Yv
+        x_pointright_end = x2 - Xv
+        y_pointright_end = y2 + Yv
+        
+        pointright_beg = QgsPoint(x_pointright_beg,y_pointright_beg)
+        z_right_beg_ident = self.dem.dataProvider().identify(pointright_beg,QgsRaster.IdentifyFormatValue)
+        z_right_beg_value = z_right_beg_ident.results()[1]
+        pointright_cen = QgsPoint(x_pointright_cen,y_pointright_cen)
+        z_right_cen_ident = self.dem.dataProvider().identify(pointright_cen,QgsRaster.IdentifyFormatValue)
+        z_right_cen_value = z_right_cen_ident.results()[1]
+        pointright_end = QgsPoint(x_pointright_end,y_pointright_end)
+        z_right_end_ident = self.dem.dataProvider().identify(pointright_end,QgsRaster.IdentifyFormatValue)
+        z_right_end_value = z_right_end_ident.results()[1]
+        if z_right_beg_value != None and z_start_value != None and z_right_cen_value != None and z_center_point_value != None and z_right_end_value != None and z_end_value != None and dist != 0 :
+            c_right_slope = round((((z_right_beg_value-z_start_value)+(z_right_cen_value-z_center_point_value)+(z_right_end_value-z_end_value))/3)/dist*100,2)
+        else :
+            c_right_slope = ''
+        
+
+        return a_slope, c_left_slope, c_right_slope, dist_seg
+              
+    def canvasReleaseEvent(self,e):
+        result = self.identify(e)
+        
+    def rubPolylineInit(self) :
+        rubber = QgsRubberBand(self.canvas,False)
+        rubber.setWidth(4)
+        rubber.setColor(QColor(255, 255, 0, 255))
+        return rubber
