@@ -86,7 +86,6 @@ class SlopeMapTool(QgsMapTool):
             x1,y1 = self.point1coord
             pt2 = QgsPoint(point)
             dist = math.sqrt(pt1.sqrDist(pt2))
-            print dist
             if dist >= self.max_length :
                 azimuth = pt1.azimuth(pt2)
                 xv = math.sin(math.radians(azimuth))*self.max_length
