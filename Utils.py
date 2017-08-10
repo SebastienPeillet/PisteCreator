@@ -85,12 +85,17 @@ class SlopeMapTool(QgsMapTool):
             pt1 = QgsPoint(self.point1coord)
             x1,y1 = self.point1coord
             pt2 = QgsPoint(point)
-            azimuth = pt1.azimuth(pt2)
-            xv = math.sin(math.radians(azimuth))*self.max_length
-            yv = math.cos(math.radians(azimuth))*self.max_length
-            x2 = x1+xv
-            y2 = y1+yv
-            self.point2coord = QgsPoint(x2,y2)
+            dist = math.sqrt(pt1.sqrDist(pt2))
+            print dist
+            if dist >= self.max_length :
+                azimuth = pt1.azimuth(pt2)
+                xv = math.sin(math.radians(azimuth))*self.max_length
+                yv = math.cos(math.radians(azimuth))*self.max_length
+                x2 = x1+xv
+                y2 = y1+yv
+                self.point2coord = QgsPoint(x2,y2)
+            else :
+                self.point2coord = point
         else:
             self.point2coord = point
         snap = self.snapper.snapToMap(self.point2coord)
