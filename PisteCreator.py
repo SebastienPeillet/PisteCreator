@@ -197,6 +197,7 @@ class PisteCreator:
         # self.dockwidget.TracksInput.clicked.connect(self.listVectLayer)
         # self.dockwidget.DEMInput.clicked.connect(self.listRastLayer)
         self.dockwidget.EditButton.clicked.connect(self.slopeCalc)
+        self.dockwidget.selectButton.clicked.connect(self.selectFeat)
         self.dockwidget.OptionButton.clicked.connect(self.openOption)
 
 
@@ -297,11 +298,51 @@ class PisteCreator:
         tolerated_a_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_a_slope')
         tolerated_c_slope = self.ConfigParser.getint('graphical_visualisation', 'tolerated_c_slope')
         max_length = self.ConfigParser.getint('graphical_visualisation', 'max_length')
+        max_length_hold = self.ConfigParser.getboolean('graphical_visualisation', 'max_length_hold')
         swath_distance = self.ConfigParser.getint('graphical_visualisation', 'swath_distance')
+        swath_display = self.ConfigParser.getboolean('graphical_visualisation', 'swath_display')
         
         #4 Activate Maptools
-        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance)
+        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance, max_length_hold, swath_display)
         self.iface.mapCanvas().setMapTool(ct)
+        
+    def selectFeat(self):
+        self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
+        st=None
+        #1 Get the vector layer
+        layers = self.iface.legendInterface().layers()
+        selected_lignes = self.dockwidget.TracksInput.currentIndex()
+        linesLayer = layers[self.vect_list[selected_lignes]]
+        
+        #2 Get the raster layer
+        selected_lignes = self.dockwidget.DEMInput.currentIndex()
+        DEMLayer = layers[self.rast_list[selected_lignes]]
+        
+        #Load raster layer
+        fileName = DEMLayer.publicSource()
+        fileInfo = QFileInfo(fileName)
+        baseName = fileInfo.baseName()
+        #keep raster path for the RasterCalculator operation
+        pathRaster = os.path.dirname(fileName)
+        dem = QgsRasterLayer(fileName, baseName)
+        if not dem.isValid():
+            print "Layer failed to load!"
+        
+        #3 
+        self.ConfigParser = GrumpyConfigParser()
+        self.ConfigParser.optionxform = str
+        configFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'option.cfg')
+        self.ConfigParser.read(configFilePath)
+        side_distance = self.ConfigParser.getint('calculation_variable', 'side_distance')
+        
+        #4 Activate Maptools
+        
+        st = SelectMapTool(self.iface,  self.updateGraph, linesLayer, dem, side_distance)
+        self.iface.mapCanvas().setMapTool(st)
+
+    def essai(self,x,y):
+        print x,y
+        return None
     
     def displayXY(self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw):
         if a != None :

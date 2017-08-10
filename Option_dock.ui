@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>279</width>
+    <width>281</width>
     <height>318</height>
    </rect>
   </property>
@@ -19,9 +19,15 @@
      <rect>
       <x>20</x>
       <y>40</y>
-      <width>101</width>
+      <width>181</width>
       <height>21</height>
      </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>181</width>
+      <height>21</height>
+     </size>
     </property>
     <property name="text">
      <string>Side distance (m) :</string>
@@ -90,6 +96,12 @@
       <height>41</height>
      </rect>
     </property>
+    <property name="minimumSize">
+     <size>
+      <width>181</width>
+      <height>41</height>
+     </size>
+    </property>
     <property name="text">
      <string>Tolerated slope (along) in percent :</string>
     </property>
@@ -119,6 +131,12 @@
       <height>41</height>
      </rect>
     </property>
+    <property name="minimumSize">
+     <size>
+      <width>181</width>
+      <height>41</height>
+     </size>
+    </property>
     <property name="text">
      <string>Swath distance for harvest (m) :</string>
     </property>
@@ -142,8 +160,8 @@
    <widget class="QPushButton" name="saveButton">
     <property name="geometry">
      <rect>
-      <x>90</x>
-      <y>250</y>
+      <x>80</x>
+      <y>270</y>
       <width>75</width>
       <height>23</height>
      </rect>
@@ -173,6 +191,12 @@
       <width>181</width>
       <height>41</height>
      </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>181</width>
+      <height>41</height>
+     </size>
     </property>
     <property name="text">
      <string>Maximum length tolerated (m) :</string>
@@ -219,8 +243,43 @@
       <height>41</height>
      </rect>
     </property>
+    <property name="minimumSize">
+     <size>
+      <width>181</width>
+      <height>41</height>
+     </size>
+    </property>
     <property name="text">
      <string>Tolerated slope (cross) in percent :</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="maxLengthCheckBox">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>200</y>
+      <width>101</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Hold distance</string>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="swathDistCheckBox">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>240</y>
+      <width>101</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Display buffer</string>
     </property>
    </widget>
   </widget>
