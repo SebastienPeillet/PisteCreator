@@ -10,7 +10,7 @@
 name=PisteCreator
 qgisMinimumVersion=2.14
 description=ONF UI plugins to create tracks
-version=1.0
+version=1.1
 author=Peillet Sebastien
 email=peillet.seb@gmail.com
 
