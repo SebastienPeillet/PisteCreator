@@ -80,6 +80,7 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
         self.maxLengthCheckBox.setChecked(self.ConfigParser.getboolean('graphical_visualisation', 'max_length_hold'))
         self.swathDistSpinBox.setValue(self.ConfigParser.getint('graphical_visualisation', 'swath_distance'))
         self.swathDistCheckBox.setChecked(self.ConfigParser.getboolean('graphical_visualisation', 'swath_display'))
+        self.interpolCheckBox.setChecked(self.ConfigParser.getboolean('calculation_variable', 'interpolate_act'))
             
     def saveconfig(self) :
         self.ConfigParser.set('calculation_variable', 'side_distance', self.sideDistSpinBox.value())
@@ -89,6 +90,7 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
         self.ConfigParser.set('graphical_visualisation', 'max_length_hold', self.maxLengthCheckBox.isChecked())
         self.ConfigParser.set('graphical_visualisation', 'swath_distance', self.swathDistSpinBox.value())
         self.ConfigParser.set('graphical_visualisation', 'swath_display', self.swathDistCheckBox.isChecked())
+        self.ConfigParser.set('calculation_variable', 'interpolate_act', self.interpolCheckBox.isChecked())
         with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'option.cfg'),'wb') as configfile:
             self.ConfigParser.write(configfile)
         self.graph_widget.initPars()

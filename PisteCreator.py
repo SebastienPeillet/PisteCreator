@@ -301,9 +301,10 @@ class PisteCreator:
         max_length_hold = self.ConfigParser.getboolean('graphical_visualisation', 'max_length_hold')
         swath_distance = self.ConfigParser.getint('graphical_visualisation', 'swath_distance')
         swath_display = self.ConfigParser.getboolean('graphical_visualisation', 'swath_display')
+        interpolate_act = self.ConfigParser.getboolean('calculation_variable', 'interpolate_act')
         
         #4 Activate Maptools
-        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance, max_length_hold, swath_display)
+        ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance, max_length_hold, swath_display, interpolate_act)
         self.iface.mapCanvas().setMapTool(ct)
         
     def selectFeat(self):

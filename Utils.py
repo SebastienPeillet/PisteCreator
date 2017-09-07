@@ -31,7 +31,7 @@ import math
 import time
 
 class SlopeMapTool(QgsMapTool):
-    def __init__(self,iface, callback, lines_layer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance, max_length_hold, swath_display):
+    def __init__(self,iface, callback, lines_layer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance, max_length_hold, swath_display, interpolate_act):
         QgsMapTool.__init__(self, iface.mapCanvas())
         self.iface              = iface
         self.callback           = callback
@@ -40,12 +40,15 @@ class SlopeMapTool(QgsMapTool):
         
         #Config variables
         self.dem                = dem
+        self.x_res              = self.dem.rasterUnitsPerPixelX()
+        self.y_res              = self.dem.rasterUnitsPerPixelY()
         self.lines_layer        = lines_layer
         self.side_distance      = side_distance
         self.max_length         = max_length
         self.tolerated_a_slope  = tolerated_a_slope
         self.tolerated_c_slope  = tolerated_c_slope
         self.swath_distance     = swath_distance
+        self.interpolate_act    = interpolate_act
         
         #Chart variables
         self.line_geom          = None
@@ -111,7 +114,10 @@ class SlopeMapTool(QgsMapTool):
             self.rub_buff_cursor.addGeometry(QgsGeometry.fromPoint(QgsPoint(self.point2coord[0], self.point2coord[1])).buffer(self.swath_distance,20),None)
         
         if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord :
-            self.a_slope, self.c_left_slope, self.c_right_slope, self.length = self.slopeCalc(self.point1coord, self.point2coord)
+            if self.interpolate_act == True :
+                self.a_slope, self.c_left_slope, self.c_right_slope, self.length = self.slopeCalc(self.point1coord, self.point2coord)
+            else :
+                self.a_slope, self.c_left_slope, self.c_right_slope, self.length = self.slopeCalcWithoutInterpolate(self.point1coord, self.point2coord)
         self.callback(self.a_slope, self.c_left_slope, self.c_right_slope, self.length, self.line_geom, self.aslope_list, self.c_left_slope_list, self.c_right_slope_list, False)
         
         if self.point1coord != None and self.point2coord != None and self.point1coord != self.point2coord and self.swath_display == True :
@@ -317,6 +323,108 @@ class SlopeMapTool(QgsMapTool):
         x2, y2 = eP
         
         # Along slope calculation
+        z_start_value = self.zInterpolate(sP)
+        z_end_value = self.zInterpolate(eP)
+
+        # z_start_ident = self.dem.dataProvider().identify(sP, QgsRaster.IdentifyFormatValue)
+        # z_start_value = z_start_ident.results()[1]
+        # z_end_ident = self.dem.dataProvider().identify(eP, QgsRaster.IdentifyFormatValue)
+        # z_end_value = z_end_ident.results()[1]
+        dist_seg = math.sqrt(sP.sqrDist(eP))
+
+        if (z_start_value != None and z_end_value != None and dist_seg != 0) :
+            # a_slope=math.fabs(z_start_value-z_end_value)/dist_seg*100
+            a_slope = round((z_end_value - z_start_value) / dist_seg * 100, 2)
+        else :
+            a_slope = ''
+        
+        # Cross slope calculation
+        #coord vector
+        xv = (x2-x1)
+        yv = (y2-y1)
+        #centre segment
+        xc = (x2-x1)/2+x1
+        yc = (y2-y1)/2+y1
+        #azimuth
+        azimuth=sP.azimuth(eP)
+        angle=azimuth-180
+
+        dist=self.side_distance
+        #vecteur directeur buff
+        Xv= dist * math.cos(math.radians(angle))
+        Yv= dist * math.sin(math.radians(angle))
+        
+        #Center value
+        center_point = QgsPoint(xc, yc)
+        # z_center_point_ident = self.dem.dataProvider().identify(center_point, QgsRaster.IdentifyFormatValue)
+        # z_center_point_value = z_center_point_ident.results()[1]
+        z_center_point_value = self.zInterpolate(center_point)
+        
+        #Left side
+        x_pointleft_beg = x1 + Xv
+        y_pointleft_beg = y1 - Yv
+        x_pointleft_cen = xc + Xv
+        y_pointleft_cen = yc - Yv
+        x_pointleft_end = x2 + Xv
+        y_pointleft_end = y2 - Yv
+        
+        pointleft_beg = QgsPoint(x_pointleft_beg, y_pointleft_beg)
+        # z_left_beg_ident = self.dem.dataProvider().identify(pointleft_beg, QgsRaster.IdentifyFormatValue)
+        # z_left_beg_value = z_left_beg_ident.results()[1]
+        z_left_beg_value = self.zInterpolate(pointleft_beg)
+        
+        pointleft_cen = QgsPoint(x_pointleft_cen, y_pointleft_cen)
+        # z_left_cen_ident = self.dem.dataProvider().identify(pointleft_cen, QgsRaster.IdentifyFormatValue)
+        # z_left_cen_value = z_left_cen_ident.results()[1]
+        z_left_cen_value = self.zInterpolate(pointleft_cen)
+        
+        pointleft_end = QgsPoint(x_pointleft_end, y_pointleft_end)
+        # z_left_end_ident = self.dem.dataProvider().identify(pointleft_end, QgsRaster.IdentifyFormatValue)
+        # z_left_end_value = z_left_end_ident.results()[1]
+        z_left_end_value = self.zInterpolate(pointleft_end)
+        
+        if z_left_beg_value != None and z_start_value != None and z_left_cen_value != None and z_center_point_value != None and z_left_end_value != None and z_end_value != None and dist != 0 :
+            c_left_slope = round((((z_left_beg_value - z_start_value) + (z_left_cen_value - z_center_point_value) + (z_left_end_value - z_end_value)) / 3)/dist * 100, 2)
+        else :
+            c_left_slope = ''
+        
+        #Right side
+        x_pointright_beg = x1 - Xv
+        y_pointright_beg = y1 + Yv
+        x_pointright_cen = xc - Xv
+        y_pointright_cen = yc + Yv
+        x_pointright_end = x2 - Xv
+        y_pointright_end = y2 + Yv
+        
+        pointright_beg = QgsPoint(x_pointright_beg, y_pointright_beg)
+        # z_right_beg_ident = self.dem.dataProvider().identify(pointright_beg, QgsRaster.IdentifyFormatValue)
+        # z_right_beg_value = z_right_beg_ident.results()[1]
+        z_right_beg_value = self.zInterpolate(pointright_beg)
+        
+        pointright_cen = QgsPoint(x_pointright_cen, y_pointright_cen)
+        # z_right_cen_ident = self.dem.dataProvider().identify(pointright_cen, QgsRaster.IdentifyFormatValue)
+        # z_right_cen_value = z_right_cen_ident.results()[1]
+        z_right_cen_value = self.zInterpolate(pointright_cen)
+        
+        pointright_end = QgsPoint(x_pointright_end, y_pointright_end)
+        # z_right_end_ident = self.dem.dataProvider().identify(pointright_end, QgsRaster.IdentifyFormatValue)
+        # z_right_end_value = z_right_end_ident.results()[1]
+        z_right_end_value = self.zInterpolate(pointright_end)
+        
+        if z_right_beg_value != None and z_start_value != None and z_right_cen_value != None and z_center_point_value != None and z_right_end_value != None and z_end_value != None and dist != 0 :
+            c_right_slope = round((((z_right_beg_value-z_start_value)+(z_right_cen_value-z_center_point_value)+(z_right_end_value-z_end_value))/3)/dist*100,2)
+        else :
+            c_right_slope = ''
+        
+
+        return a_slope, c_left_slope, c_right_slope, dist_seg
+
+    def slopeCalcWithoutInterpolate(self, sP, eP) :
+        # #Retrieve coord
+        x1, y1 = sP
+        x2, y2 = eP
+        
+        # Along slope calculation
         z_start_ident = self.dem.dataProvider().identify(sP, QgsRaster.IdentifyFormatValue)
         z_start_value = z_start_ident.results()[1]
         z_end_ident = self.dem.dataProvider().identify(eP, QgsRaster.IdentifyFormatValue)
@@ -361,12 +469,15 @@ class SlopeMapTool(QgsMapTool):
         pointleft_beg = QgsPoint(x_pointleft_beg, y_pointleft_beg)
         z_left_beg_ident = self.dem.dataProvider().identify(pointleft_beg, QgsRaster.IdentifyFormatValue)
         z_left_beg_value = z_left_beg_ident.results()[1]
+        
         pointleft_cen = QgsPoint(x_pointleft_cen, y_pointleft_cen)
         z_left_cen_ident = self.dem.dataProvider().identify(pointleft_cen, QgsRaster.IdentifyFormatValue)
         z_left_cen_value = z_left_cen_ident.results()[1]
+        
         pointleft_end = QgsPoint(x_pointleft_end, y_pointleft_end)
         z_left_end_ident = self.dem.dataProvider().identify(pointleft_end, QgsRaster.IdentifyFormatValue)
         z_left_end_value = z_left_end_ident.results()[1]
+        
         if z_left_beg_value != None and z_start_value != None and z_left_cen_value != None and z_center_point_value != None and z_left_end_value != None and z_end_value != None and dist != 0 :
             c_left_slope = round((((z_left_beg_value - z_start_value) + (z_left_cen_value - z_center_point_value) + (z_left_end_value - z_end_value)) / 3)/dist * 100, 2)
         else :
@@ -380,15 +491,18 @@ class SlopeMapTool(QgsMapTool):
         x_pointright_end = x2 - Xv
         y_pointright_end = y2 + Yv
         
-        pointright_beg = QgsPoint(x_pointright_beg,y_pointright_beg)
-        z_right_beg_ident = self.dem.dataProvider().identify(pointright_beg,QgsRaster.IdentifyFormatValue)
+        pointright_beg = QgsPoint(x_pointright_beg, y_pointright_beg)
+        z_right_beg_ident = self.dem.dataProvider().identify(pointright_beg, QgsRaster.IdentifyFormatValue)
         z_right_beg_value = z_right_beg_ident.results()[1]
-        pointright_cen = QgsPoint(x_pointright_cen,y_pointright_cen)
-        z_right_cen_ident = self.dem.dataProvider().identify(pointright_cen,QgsRaster.IdentifyFormatValue)
+        
+        pointright_cen = QgsPoint(x_pointright_cen, y_pointright_cen)
+        z_right_cen_ident = self.dem.dataProvider().identify(pointright_cen, QgsRaster.IdentifyFormatValue)
         z_right_cen_value = z_right_cen_ident.results()[1]
-        pointright_end = QgsPoint(x_pointright_end,y_pointright_end)
-        z_right_end_ident = self.dem.dataProvider().identify(pointright_end,QgsRaster.IdentifyFormatValue)
+        
+        pointright_end = QgsPoint(x_pointright_end, y_pointright_end)
+        z_right_end_ident = self.dem.dataProvider().identify(pointright_end, QgsRaster.IdentifyFormatValue)
         z_right_end_value = z_right_end_ident.results()[1]
+        
         if z_right_beg_value != None and z_start_value != None and z_right_cen_value != None and z_center_point_value != None and z_right_end_value != None and z_end_value != None and dist != 0 :
             c_right_slope = round((((z_right_beg_value-z_start_value)+(z_right_cen_value-z_center_point_value)+(z_right_end_value-z_end_value))/3)/dist*100,2)
         else :
@@ -396,7 +510,141 @@ class SlopeMapTool(QgsMapTool):
         
 
         return a_slope, c_left_slope, c_right_slope, dist_seg
+        
+    def zInterpolate(self, point) :
+        pt1_ident = self.dem.dataProvider().identify(point, QgsRaster.IdentifyFormatValue)
+        pt1_value = pt1_ident.results()[1]
+        
+        x, y = point
+        base_x = x % self.x_res
+        base_y = y % self.y_res
 
+        if base_x == 0 and base_y == 0 :
+            pt1 = QgsPoint((x - self.x_res/2),(y - self.y_res/2))
+            pt1_ident = self.dem.dataProvider().identify(pt1, QgsRaster.IdentifyFormatValue)
+            pt1_value = pt1_ident.results()[1]
+            pt2 = QgsPoint((x + self.x_res/2),(y - self.y_res/2))
+            pt2_ident = self.dem.dataProvider().identify(pt2, QgsRaster.IdentifyFormatValue)
+            pt2_value = pt2_ident.results()[1]
+            pt3 = QgsPoint((x - self.x_res/2),(y + self.y_res/2))
+            pt3_ident = self.dem.dataProvider().identify(pt3, QgsRaster.IdentifyFormatValue)
+            pt3_value = pt3_ident.results()[1]
+            pt4 = QgsPoint((x + self.x_res/2),(y + self.y_res/2))
+            pt4_ident = self.dem.dataProvider().identify(pt4, QgsRaster.IdentifyFormatValue)
+            pt4_value = pt4_ident.results()[1]
+            z_value = (pt1_value + pt2_value + pt3_value + pt4_value) / 4
+        elif base_x == 0 and base_y <= (self.y_res/2) :
+            pt1 = QgsPoint((x+self.x_res/2),y)
+            pt1_ident = self.dem.dataProvider().identify(pt1, QgsRaster.IdentifyFormatValue)
+            pt1_value = z_pt1_ident.results()[1]
+            pt2 = QgsPoint((x-self.x_res/2),y)
+            pt2_ident = self.dem.dataProvider().identify(pt2, QgsRaster.IdentifyFormatValue)
+            pt2_value = pt2_ident.results()[1]           
+            pt3 = QgsPoint((x+self/x_res/2),(y-self.y_res/2))
+            pt3_ident = self.dem.dataProvider().identify(pt3, QgsRaster.IdentifyFormatValue)
+            pt3_value = pt3_ident.results()[1]
+            pt4 = QgsPoint((x-self.x_res/2),(y-self.y_res/2))
+            pt4_ident = self.dem.dataProvider().identify(pt4, QgsRaster.IdentifyFormatValue)
+            pt4_value = pt4_ident.results()[1]
+            z_value = (((pt1_value*(self.y_res - math.fabs(self.y_res/2 - base_y))+pt3_value*math.fabs(self.y_res/2 - base_y)) / self.y_res) + \
+                ((pt2_value*(self.y_res -math.fabs(self.y_res/2 - base_y))+pt4_value*math.fabs(self.y_res/2 - base_y)) / self.y_res)) / 2
+        elif base_x == 0 and base_y > (self.y_res/2) :
+            pt1 = QgsPoint((x+self/x_res/2),y)
+            pt1_ident = self.dem.dataProvider().identify(pt1, QgsRaster.IdentifyFormatValue)
+            pt1_value = z_pt1_ident.results()[1]
+            pt2 = QgsPoint((x-self.x_res/2),y)
+            pt2_ident = self.dem.dataProvider().identify(pt2, QgsRaster.IdentifyFormatValue)
+            pt2_value = pt2_ident.results()[1]           
+            pt3 = QgsPoint((x+self/x_res/2),(y+self.y_res/2))
+            pt3_ident = self.dem.dataProvider().identify(pt3, QgsRaster.IdentifyFormatValue)
+            pt3_value = pt3_ident.results()[1]
+            pt4 = QgsPoint((x-self.x_res/2),(y+self.y_res/2))
+            pt4_ident = self.dem.dataProvider().identify(pt4, QgsRaster.IdentifyFormatValue)
+            pt4_value = pt4_ident.results()[1]
+            z_value = (((pt1_value*(self.y_res - math.fabs(self.y_res/2 - base_y))+pt3_value*math.fabs(self.y_res/2 - base_y)) / self.y_res) + \
+                ((pt2_value*(self.y_res -math.fabs(self.y_res/2 - base_y))+pt4_value*math.fabs(self.y_res/2 - base_y)) / self.y_res)) / 2
+        elif base_x <= (self.x_res/2) and base_y == 0 :
+            pt1 = QgsPoint(x,(y+self.y_res/2))
+            pt1_ident = self.dem.dataProvider().identify(pt1, QgsRaster.IdentifyFormatValue)
+            pt1_value = z_pt1_ident.results()[1]
+            pt2 = QgsPoint((x-self.x_res/2),(y+self.y_res/2))
+            pt2_ident = self.dem.dataProvider().identify(pt2, QgsRaster.IdentifyFormatValue)
+            pt2_value = pt2_ident.results()[1]           
+            pt3 = QgsPoint(x,(y-self.y_res/2))
+            pt3_ident = self.dem.dataProvider().identify(pt3, QgsRaster.IdentifyFormatValue)
+            pt3_value = pt3_ident.results()[1]
+            pt4 = QgsPoint((x-self.x_res/2),(y-self.y_res/2))
+            pt4_ident = self.dem.dataProvider().identify(pt4, QgsRaster.IdentifyFormatValue)
+            pt4_value = pt4_ident.results()[1]
+            z_value = (((pt1_value+pt3_value)/ 2) * (self.x_res -math.fabs(self.x_res/2 - base_x)) + \
+                ((pt2_value+pt4_value) / 2) * math.fabs(self.x_res/2 - base_x)) / self.x_res
+        elif base_x > (self.x_res/2) and base_y == 0 :
+            pt1 = QgsPoint(x,(y+self.y_res/2))
+            pt1_ident = self.dem.dataProvider().identify(pt1, QgsRaster.IdentifyFormatValue)
+            pt1_value = z_pt1_ident.results()[1]
+            pt2 = QgsPoint((x+self.x_res/2),(y+self.y_res/2))
+            pt2_ident = self.dem.dataProvider().identify(pt2, QgsRaster.IdentifyFormatValue)
+            pt2_value = pt2_ident.results()[1]           
+            pt3 = QgsPoint(x,(y-self.y_res/2))
+            pt3_ident = self.dem.dataProvider().identify(pt3, QgsRaster.IdentifyFormatValue)
+            pt3_value = pt3_ident.results()[1]
+            pt4 = QgsPoint((x+self.x_res/2),(y-self.y_res/2))
+            pt4_ident = self.dem.dataProvider().identify(pt4, QgsRaster.IdentifyFormatValue)
+            pt4_value = pt4_ident.results()[1]
+            z_value = (((pt1_value+pt3_value)/ 2) * (self.x_res -math.fabs(self.x_res/2 - base_x)) + \
+                ((pt2_value+pt4_value) / 2) * math.fabs(self.x_res/2 - base_x)) / self.x_res 
+        elif base_x <= (self.x_res/2) and base_y <= (self.y_res/2) :
+            pt2 = QgsPoint((x-self.x_res/2),y)
+            pt2_ident = self.dem.dataProvider().identify(pt2, QgsRaster.IdentifyFormatValue)
+            pt2_value = pt2_ident.results()[1]           
+            pt3 = QgsPoint(x,(y-self.y_res/2))
+            pt3_ident = self.dem.dataProvider().identify(pt3, QgsRaster.IdentifyFormatValue)
+            pt3_value = pt3_ident.results()[1]
+            pt4 = QgsPoint((x-self.x_res/2),(y-self.y_res/2))
+            pt4_ident = self.dem.dataProvider().identify(pt4, QgsRaster.IdentifyFormatValue)
+            pt4_value = pt4_ident.results()[1]
+            z_value = (((pt1_value*(self.y_res - math.fabs(self.y_res/2 - base_y))+pt3_value*math.fabs(self.y_res/2 - base_y)) / self.y_res) * (self.x_res -math.fabs(self.x_res/2 - base_x)) + \
+                ((pt2_value*(self.y_res -math.fabs(self.y_res/2 - base_y))+pt4_value*math.fabs(self.y_res/2 - base_y)) / self.y_res) * math.fabs(self.x_res/2 - base_x)) / self.x_res
+        elif base_x <= (self.x_res/2) and base_y > (self.y_res/2) :
+            pt2 = QgsPoint((x-self.x_res/2),y)
+            pt2_ident = self.dem.dataProvider().identify(pt2, QgsRaster.IdentifyFormatValue)
+            pt2_value = pt2_ident.results()[1]           
+            pt3 = QgsPoint(x,(y+self.y_res/2))
+            pt3_ident = self.dem.dataProvider().identify(pt3, QgsRaster.IdentifyFormatValue)
+            pt3_value = pt3_ident.results()[1]
+            pt4 = QgsPoint((x-self.x_res/2),(y+self.y_res/2))
+            pt4_ident = self.dem.dataProvider().identify(pt4, QgsRaster.IdentifyFormatValue)
+            pt4_value = pt4_ident.results()[1]
+            z_value = (((pt1_value*(self.y_res - math.fabs(self.y_res/2 - base_y))+pt3_value*math.fabs(self.y_res/2 - base_y)) / self.y_res) * (self.x_res -math.fabs(self.x_res/2 - base_x)) + \
+                ((pt2_value*(self.y_res -math.fabs(self.y_res/2 - base_y))+pt4_value*math.fabs(self.y_res/2 - base_y)) / self.y_res) * math.fabs(self.x_res/2 - base_x)) / self.x_res
+        elif base_x > (self.x_res/2) and base_y <= (self.y_res/2) :
+            pt2 = QgsPoint((x+self.x_res/2),y)
+            pt2_ident = self.dem.dataProvider().identify(pt2, QgsRaster.IdentifyFormatValue)
+            pt2_value = pt2_ident.results()[1]           
+            pt3 = QgsPoint(x,(y-self.y_res/2))
+            pt3_ident = self.dem.dataProvider().identify(pt3, QgsRaster.IdentifyFormatValue)
+            pt3_value = pt3_ident.results()[1]
+            pt4 = QgsPoint((x+self.x_res/2),(y-self.y_res/2))
+            pt4_ident = self.dem.dataProvider().identify(pt4, QgsRaster.IdentifyFormatValue)
+            pt4_value = pt4_ident.results()[1]
+            z_value = (((pt1_value*(self.y_res - math.fabs(self.y_res/2 - base_y))+pt3_value*math.fabs(self.y_res/2 - base_y)) / self.y_res) * (self.x_res -math.fabs(self.x_res/2 - base_x)) + \
+                ((pt2_value*(self.y_res -math.fabs(self.y_res/2 - base_y))+pt4_value*math.fabs(self.y_res/2 - base_y)) / self.y_res) * math.fabs(self.x_res/2 - base_x)) / self.x_res
+        elif base_x > (self.x_res/2) and base_y > (self.y_res/2) :
+            pt2 = QgsPoint((x+self.x_res/2),y)
+            pt2_ident = self.dem.dataProvider().identify(pt2, QgsRaster.IdentifyFormatValue)
+            pt2_value = pt2_ident.results()[1]           
+            pt3 = QgsPoint(x,(y+self.y_res/2))
+            pt3_ident = self.dem.dataProvider().identify(pt3, QgsRaster.IdentifyFormatValue)
+            pt3_value = pt3_ident.results()[1]
+            pt4 = QgsPoint((x+self.x_res/2),(y+self.y_res/2))
+            pt4_ident = self.dem.dataProvider().identify(pt4, QgsRaster.IdentifyFormatValue)
+            pt4_value = pt4_ident.results()[1]
+            z_value = (((pt1_value*(self.y_res - math.fabs(self.y_res/2 - base_y))+pt3_value*math.fabs(self.y_res/2 - base_y)) / self.y_res) * (self.x_res -math.fabs(self.x_res/2 - base_x)) + \
+                ((pt2_value*(self.y_res -math.fabs(self.y_res/2 - base_y))+pt4_value*math.fabs(self.y_res/2 - base_y)) / self.y_res) * math.fabs(self.x_res/2 - base_x)) / self.x_res
+        else :
+            z_value = pt1_value
+        return z_value
+        
     def rubDisplayUp(self) :
         self.rub_polyline.reset()
         self.rub_rect.reset()
