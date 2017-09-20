@@ -666,7 +666,7 @@ class SlopeMapTool(QgsMapTool):
                 self.rub_polyline.setColor(QColor(130, 54, 54))
         
         self.rub_rect.addGeometry(QgsGeometry.fromPolyline(points).buffer(self.swath_distance,20),None)
-        self.rub_rect.setColor(QColor(0,255,0,50))
+        # self.rub_rect.setColor(QColor(0,255,0,50))
         return None
 
        
@@ -678,20 +678,20 @@ class SlopeMapTool(QgsMapTool):
         for track in tracks_layer.getFeatures() :
             geom = track.geometry().asPolyline()
             rubber.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20),None)
-        rubber.setColor(QColor(0,255,0,50))
-        rubber.setWidth(3)
+        rubber.setColor(QColor(0,255,0,255))
+        rubber.setWidth(2)
         return rubber
 
     def rubAnchorInit(self) :
         rubber = QgsRubberBand(self.canvas,True)
-        rubber.setColor(QColor(0,255,0,50))
+        rubber.setColor(QColor(0,255,0,255))
         rubber.setWidth(3)
         return rubber
     
     def rubRectInit(self) :
         rubber = QgsRubberBand(self.canvas,True)
-        rubber.setColor(QColor(0,255,0,50))
-        rubber.setWidth(3)
+        rubber.setColor(QColor(0,255,0,255))
+        rubber.setWidth(2)
         return rubber
 
     def rubPolylineInit(self) :
@@ -709,8 +709,8 @@ class SlopeMapTool(QgsMapTool):
         
     def rubBuffCursorInit(self) :
         rubber = QgsRubberBand(self.canvas,True)
-        rubber.setColor(QColor(0,255,0,50))
-        rubber.setWidth(3)
+        rubber.setColor(QColor(0,255,0,255))
+        rubber.setWidth(2)
         return rubber
     
     #SNAP INIT FUNCTION
