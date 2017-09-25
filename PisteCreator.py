@@ -191,11 +191,8 @@ class PisteCreator:
         self.listRastLayer()
         self.graph_widget = SlopeGraphicsView()
         self.dockwidget.graphLayout.addWidget(self.graph_widget,0,0)
-        # self.dockwidget.DEMButton.clicked.connect(self.selectDemFile)
         self.dockwidget.TracksButton.clicked.connect(self.listVectLayer)
         self.dockwidget.DEMButton.clicked.connect(self.listRastLayer)
-        # self.dockwidget.TracksInput.clicked.connect(self.listVectLayer)
-        # self.dockwidget.DEMInput.clicked.connect(self.listRastLayer)
         self.dockwidget.EditButton.clicked.connect(self.slopeCalc)
         self.dockwidget.selectButton.clicked.connect(self.selectFeat)
         self.dockwidget.OptionButton.clicked.connect(self.openOption)
@@ -209,7 +206,7 @@ class PisteCreator:
         #print "** CLOSING PisteCreator"
 
         # disconnects
-        self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
+        self.dockwidget=None
 
         # remove this statement if dockwidget is to remain
         # for reuse if plugin is reopened
@@ -218,7 +215,6 @@ class PisteCreator:
         # self.dockwidget = None
         self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
         self.pluginIsActive = False
-
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -232,27 +228,28 @@ class PisteCreator:
             self.iface.removeToolBarIcon(action)
         # remove the toolbar
         del self.toolbar
-        
-    def selectDemFile(self):
-        filename = QFileDialog.getOpenFileName(self.dockwidget, "Select output file ","", '*.tif')
-        self.dockwidget.DEMInput.setText(filename)
+        del self.menu
+        del self.dockwidget
     
-    def listVectLayer(self):
-        #clear list and index
-        self.dockwidget.TracksInput.clear()
-        self.dockwidget.TracksInput.clearEditText()
-        self.vect_list = []
-        layers = self.iface.legendInterface().layers()
-        layer_list = []
-        index = 0
-        for layer in layers:
-            if layer.type() == 0 :
-                layer_list.append(layer.name())
-                self.vect_list.append(index)
-            index+=1
-        self.dockwidget.TracksInput.addItems(layer_list)
+    #--------------------------------------------------------------------------
+    #PisteCreator function
+    def displayXY(self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw):
+        """Check output values from the edit maptool, use as a callback function"""
+        
+        if a != None :
+            self.dockwidget.AlongResult.setText(str(a)+'%')
+        if b != None :
+            self.dockwidget.LeftCrossResult.setText(str(b)+'%')
+        if c != None :
+            self.dockwidget.RightCrossResult.setText(str(c)+'%')
+        if d != None :
+            self.dockwidget.LengthResult.setText(str(d))
+        if graph_draw == True :
+            self.updateGraph(geom, a_slope, c_l_slope, c_r_slope)
 
     def listRastLayer(self):
+        """List raster inputs for the DEM selection"""
+        
         #clear list and index
         self.dockwidget.DEMInput.clear()
         self.dockwidget.DEMInput.clearEditText()
@@ -267,7 +264,71 @@ class PisteCreator:
             index+=1
         self.dockwidget.DEMInput.addItems(layer_list)
 
+    def listVectLayer(self):
+        """List line layer for the track selection"""
+        
+        #clear list and index
+        self.dockwidget.TracksInput.clear()
+        self.dockwidget.TracksInput.clearEditText()
+        self.vect_list = []
+        layers = self.iface.legendInterface().layers()
+        layer_list = []
+        index = 0
+        for layer in layers:
+            if layer.type() == 0 :
+                if layer.geometryType() == 1:
+                    layer_list.append(layer.name())
+                    self.vect_list.append(index)
+            index+=1
+        self.dockwidget.TracksInput.addItems(layer_list)
+        
+    def openOption(self):
+        """Open the options box"""
+        
+        self.optionDock = OptionDock(self, self.graph_widget,self.canvas)
+        self.optionDock.show()
+        return None
+    
+    def selectFeat(self):
+        """Activate the select tools to review track graph"""
+        
+        self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
+        st=None
+        #1 Get the vector layer
+        layers = self.iface.legendInterface().layers()
+        selected_lignes = self.dockwidget.TracksInput.currentIndex()
+        linesLayer = layers[self.vect_list[selected_lignes]]
+        
+        #2 Get the raster layer
+        selected_lignes = self.dockwidget.DEMInput.currentIndex()
+        DEMLayer = layers[self.rast_list[selected_lignes]]
+        
+        #Load raster layer
+        fileName = DEMLayer.publicSource()
+        fileInfo = QFileInfo(fileName)
+        baseName = fileInfo.baseName()
+        #keep raster path for the RasterCalculator operation
+        pathRaster = os.path.dirname(fileName)
+        dem = QgsRasterLayer(fileName, baseName)
+        if not dem.isValid():
+            print "Layer failed to load!"
+        
+        #3 
+        self.ConfigParser = GrumpyConfigParser()
+        self.ConfigParser.optionxform = str
+        configFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'option.cfg')
+        self.ConfigParser.read(configFilePath)
+        side_distance = self.ConfigParser.getint('calculation_variable', 'side_distance')
+        interpolate_act = self.ConfigParser.getboolean('calculation_variable', 'interpolate_act')
+        
+        #4 Activate Maptools
+        
+        st = SelectMapTool(self.iface,  self.updateGraph, linesLayer, dem, side_distance, interpolate_act)
+        self.iface.mapCanvas().setMapTool(st)
+
     def slopeCalc(self):
+        """Activate the edit tool"""
+        
         self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
         ct=None
         #1 Get the vector layer
@@ -307,57 +368,9 @@ class PisteCreator:
         ct = SlopeMapTool(self.iface,  self.displayXY, linesLayer, dem, side_distance, tolerated_a_slope, tolerated_c_slope, max_length, swath_distance, max_length_hold, swath_display, interpolate_act)
         self.iface.mapCanvas().setMapTool(ct)
         
-    def selectFeat(self):
-        self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
-        st=None
-        #1 Get the vector layer
-        layers = self.iface.legendInterface().layers()
-        selected_lignes = self.dockwidget.TracksInput.currentIndex()
-        linesLayer = layers[self.vect_list[selected_lignes]]
-        
-        #2 Get the raster layer
-        selected_lignes = self.dockwidget.DEMInput.currentIndex()
-        DEMLayer = layers[self.rast_list[selected_lignes]]
-        
-        #Load raster layer
-        fileName = DEMLayer.publicSource()
-        fileInfo = QFileInfo(fileName)
-        baseName = fileInfo.baseName()
-        #keep raster path for the RasterCalculator operation
-        pathRaster = os.path.dirname(fileName)
-        dem = QgsRasterLayer(fileName, baseName)
-        if not dem.isValid():
-            print "Layer failed to load!"
-        
-        #3 
-        self.ConfigParser = GrumpyConfigParser()
-        self.ConfigParser.optionxform = str
-        configFilePath = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'option.cfg')
-        self.ConfigParser.read(configFilePath)
-        side_distance = self.ConfigParser.getint('calculation_variable', 'side_distance')
-        
-        #4 Activate Maptools
-        
-        st = SelectMapTool(self.iface,  self.updateGraph, linesLayer, dem, side_distance)
-        self.iface.mapCanvas().setMapTool(st)
-
-    def essai(self,x,y):
-        print x,y
-        return None
-    
-    def displayXY(self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw):
-        if a != None :
-            self.dockwidget.AlongResult.setText(str(a)+'%')
-        if b != None :
-            self.dockwidget.LeftCrossResult.setText(str(b)+'%')
-        if c != None :
-            self.dockwidget.RightCrossResult.setText(str(c)+'%')
-        if d != None :
-            self.dockwidget.LengthResult.setText(str(d))
-        if graph_draw == True :
-            self.updateGraph(geom, a_slope, c_l_slope, c_r_slope)
-    
     def updateGraph(self, geom, a_slope, c_l_slope, c_r_slope) :
+        """Update the track graph, use as a callback function for the PisteCreator Edit Maptools"""
+        
         length = 0
         length_list = [0]
         len_geom = len(geom)
@@ -370,10 +383,6 @@ class PisteCreator:
                 length_list.append(length)
         self.graph_widget.plot(length_list, a_slope, c_l_slope, c_r_slope)
         
-    def openOption(self):
-        self.optionDock = OptionDock(self, self.graph_widget,self.canvas)
-        self.optionDock.show()
-        return None
     #--------------------------------------------------------------------------
 
     def run(self):
