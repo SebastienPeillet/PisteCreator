@@ -187,7 +187,7 @@ class SlopeMapTool(QgsMapTool):
                 if self.swath_display == True :
                     self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
                 if pr.fieldNameIndex('id') == -1 :
-                    pr.addAttributes([QgsField('id', QVariant.Double,"double",6,1)] )
+                    pr.addAttributes([QgsField('id', QVariant.Int,"int",6)] )
                     self.lines_layer.updateFields()
                 id_max = 0
                 for feat in self.lines_layer.getFeatures():
@@ -233,7 +233,7 @@ class SlopeMapTool(QgsMapTool):
                     if self.swath_display == True :
                         self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
                     if pr.fieldNameIndex('id') == -1 :
-                        pr.addAttributes([QgsField('id', QVariant.Double,"double",6,1)] )
+                        pr.addAttributes([QgsField('id', QVariant.Int,"int",6)] )
                         self.lines_layer.updateFields()
                     id_max = 0
                     for feat in self.lines_layer.getFeatures():
@@ -272,7 +272,7 @@ class SlopeMapTool(QgsMapTool):
             if self.swath_display == True :
                 self.rub_rect_anchors.addGeometry(QgsGeometry.fromPolyline(geom).buffer(self.swath_distance,20), None)
             if pr.fieldNameIndex('id') == -1 :
-                pr.addAttributes([QgsField('id', QVariant.Double,"double",6,1)] )
+                pr.addAttributes([QgsField('id', QVariant.Int,"int",6)] )
                 self.lines_layer.updateFields()
             id_max = 0
             for feat in self.lines_layer.getFeatures():

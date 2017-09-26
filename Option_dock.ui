@@ -6,26 +6,26 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>288</width>
-    <height>346</height>
+    <width>270</width>
+    <height>341</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>DockWidget</string>
+   <string>Options</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <widget class="QLabel" name="sideDistLabel">
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>40</y>
-      <width>181</width>
+      <y>27</y>
+      <width>201</width>
       <height>21</height>
      </rect>
     </property>
     <property name="minimumSize">
      <size>
-      <width>181</width>
+      <width>201</width>
       <height>21</height>
      </size>
     </property>
@@ -37,7 +37,7 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>40</y>
+      <y>27</y>
       <width>42</width>
       <height>22</height>
      </rect>
@@ -53,7 +53,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>90</y>
+      <y>96</y>
       <width>171</width>
       <height>20</height>
      </rect>
@@ -62,6 +62,7 @@
      <font>
       <weight>75</weight>
       <bold>true</bold>
+      <underline>true</underline>
      </font>
     </property>
     <property name="text">
@@ -72,15 +73,22 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>10</y>
-      <width>171</width>
+      <y>4</y>
+      <width>251</width>
       <height>20</height>
      </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>251</width>
+      <height>0</height>
+     </size>
     </property>
     <property name="font">
      <font>
       <weight>75</weight>
       <bold>true</bold>
+      <underline>true</underline>
      </font>
     </property>
     <property name="text">
@@ -92,13 +100,13 @@
      <rect>
       <x>20</x>
       <y>110</y>
-      <width>181</width>
+      <width>201</width>
       <height>41</height>
      </rect>
     </property>
     <property name="minimumSize">
      <size>
-      <width>181</width>
+      <width>201</width>
       <height>41</height>
      </size>
     </property>
@@ -127,13 +135,13 @@
      <rect>
       <x>20</x>
       <y>230</y>
-      <width>181</width>
+      <width>201</width>
       <height>41</height>
      </rect>
     </property>
     <property name="minimumSize">
      <size>
-      <width>181</width>
+      <width>201</width>
       <height>41</height>
      </size>
     </property>
@@ -160,7 +168,7 @@
    <widget class="QPushButton" name="saveButton">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>100</x>
       <y>290</y>
       <width>75</width>
       <height>23</height>
@@ -175,13 +183,13 @@
      <rect>
       <x>20</x>
       <y>190</y>
-      <width>181</width>
+      <width>201</width>
       <height>41</height>
      </rect>
     </property>
     <property name="minimumSize">
      <size>
-      <width>181</width>
+      <width>201</width>
       <height>41</height>
      </size>
     </property>
@@ -226,13 +234,13 @@
      <rect>
       <x>20</x>
       <y>150</y>
-      <width>181</width>
+      <width>201</width>
       <height>41</height>
      </rect>
     </property>
     <property name="minimumSize">
      <size>
-      <width>181</width>
+      <width>201</width>
       <height>41</height>
      </size>
     </property>
@@ -243,9 +251,9 @@
    <widget class="QCheckBox" name="maxLengthCheckBox">
     <property name="geometry">
      <rect>
-      <x>50</x>
+      <x>30</x>
       <y>220</y>
-      <width>101</width>
+      <width>171</width>
       <height>17</height>
      </rect>
     </property>
@@ -259,11 +267,17 @@
    <widget class="QCheckBox" name="swathDistCheckBox">
     <property name="geometry">
      <rect>
-      <x>50</x>
+      <x>30</x>
       <y>260</y>
-      <width>101</width>
+      <width>171</width>
       <height>17</height>
      </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>171</width>
+      <height>0</height>
+     </size>
     </property>
     <property name="text">
      <string>Display buffer</string>
@@ -272,11 +286,23 @@
    <widget class="QCheckBox" name="interpolCheckBox">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>66</y>
-      <width>101</width>
+      <x>30</x>
+      <y>53</y>
+      <width>191</width>
       <height>21</height>
      </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>191</width>
+      <height>0</height>
+     </size>
     </property>
     <property name="text">
      <string>DEM Interpolate</string>
