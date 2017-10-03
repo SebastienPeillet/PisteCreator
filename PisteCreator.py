@@ -374,13 +374,16 @@ class PisteCreator:
         length = 0
         length_list = [0]
         len_geom = len(geom)
-        for i in range(0,len_geom-1) :
-            if i+1 <=len_geom :
-                pt1 = geom[i]
-                pt2 = geom[i+1]
-                azimuth = pt1.azimuth(pt2)
-                length += math.sqrt(pt1.sqrDist(pt2))
-                length_list.append(length)
+        if len_geom != 0 :
+            for i in range(0,len_geom-1) :
+                if i+1 <=len_geom :
+                    pt1 = geom[i]
+                    pt2 = geom[i+1]
+                    azimuth = pt1.azimuth(pt2)
+                    length += math.sqrt(pt1.sqrDist(pt2))
+                    length_list.append(length)
+        else :
+            del length_list[-1]
         self.graph_widget.plot(length_list, a_slope, c_l_slope, c_r_slope)
         
     #--------------------------------------------------------------------------
