@@ -206,7 +206,7 @@ class PisteCreator:
         #print "** CLOSING PisteCreator"
 
         # disconnects
-        self.dockwidget=None
+        self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
 
         # remove this statement if dockwidget is to remain
         # for reuse if plugin is reopened
