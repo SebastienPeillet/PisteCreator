@@ -6,6 +6,7 @@
  ONF UI plugins to create tracks
                              -------------------
         begin                : 2017-04-24
+        last                 : 2017-10-20
         copyright            : (C) 2017 by Peillet Sebastien
         email                : peillet.seb@gmail.com
         git sha              : $Format:%H$

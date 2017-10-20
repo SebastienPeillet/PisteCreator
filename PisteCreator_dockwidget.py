@@ -6,7 +6,7 @@
  ONF UI plugins to create tracks
                              -------------------
         begin                : 2017-04-24
-        git sha              : $Format:%H$
+        last                 : 2017-10-20
         copyright            : (C) 2017 by Peillet Sebastien
         email                : peillet.seb@gmail.com
  ***************************************************************************/
@@ -39,11 +39,8 @@ class PisteCreatorDockWidget(QtGui.QDockWidget, FORM_CLASS):
         super(PisteCreatorDockWidget, self).__init__(parent)
 
         self.setupUi(self)
-            
-    
-
 
     def closeEvent(self, event):
+        """Clove event"""
         self.closingPlugin.emit()
         event.accept()
-
