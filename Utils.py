@@ -567,7 +567,7 @@ class SlopeMapTool(QgsMapTool):
         z_start_value = self.zInterpolate(sP)
         z_end_value = self.zInterpolate(eP)
 
-        dist_seg = math.sqrt(sP.sqrDist(eP))
+        dist_seg = round(math.sqrt(sP.sqrDist(eP)), 2)
 
         if z_start_value is not None \
             and z_end_value is not None \
@@ -670,7 +670,7 @@ class SlopeMapTool(QgsMapTool):
         z_end_ident = self.dem.dataProvider().identify(
             eP, QgsRaster.IdentifyFormatValue)
         z_end_value = z_end_ident.results()[1]
-        dist_seg = math.sqrt(sP.sqrDist(eP))
+        dist_seg = round(math.sqrt(sP.sqrDist(eP)), 2)
 
         if z_start_value is not None \
             and z_end_value is not None \
