@@ -23,7 +23,7 @@
 
 from qgis.gui import QgsRubberBand, QgsMapToolIdentify, QgsMapTool
 from qgis.core import QgsGeometry, QgsPoint, QgsFeature, QgsRaster, \
-    QgsFeatureRequest, QgsSnappingUtils, QgsExpression
+    QgsFeatureRequest, QgsSnappingUtils, QgsExpression, QgsField
 from PyQt4.QtGui import QColor
 from PyQt4.QtCore import QVariant
 import math
@@ -814,7 +814,7 @@ class SlopeMapTool(QgsMapTool):
             pt1 = QgsPoint((x + self.x_res / 2), y)
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
-            pt1_value = z_pt1_ident.results()[1]
+            pt1_value = pt1_ident.results()[1]
             pt2 = QgsPoint((x - self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
@@ -836,10 +836,10 @@ class SlopeMapTool(QgsMapTool):
                     + pt4_value
                     * math.fabs(self.y_res / 2 - base_y)) / self.y_res)) / 2
         elif base_x == 0 and base_y > (self.y_res / 2):
-            pt1 = QgsPoint((x + self / x_res / 2), y)
+            pt1 = QgsPoint((x + self.x_res / 2), y)
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
-            pt1_value = z_pt1_ident.results()[1]
+            pt1_value = pt1_ident.results()[1]
             pt2 = QgsPoint((x - self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
@@ -864,7 +864,7 @@ class SlopeMapTool(QgsMapTool):
             pt1 = QgsPoint(x, (y + self.y_res / 2))
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
-            pt1_value = z_pt1_ident.results()[1]
+            pt1_value = pt1_ident.results()[1]
             pt2 = QgsPoint((x - self.x_res / 2), (y + self.y_res / 2))
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
@@ -886,7 +886,7 @@ class SlopeMapTool(QgsMapTool):
             pt1 = QgsPoint(x, (y + self.y_res / 2))
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
-            pt1_value = z_pt1_ident.results()[1]
+            pt1_value = pt1_ident.results()[1]
             pt2 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
@@ -1377,7 +1377,7 @@ class SelectMapTool(QgsMapTool):
             pt1 = QgsPoint((x+self.x_res / 2), y)
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
-            pt1_value = z_pt1_ident.results()[1]
+            pt1_value = pt1_ident.results()[1]
             pt2 = QgsPoint((x-self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
@@ -1402,7 +1402,7 @@ class SelectMapTool(QgsMapTool):
             pt1 = QgsPoint((x + self / x_res / 2), y)
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
-            pt1_value = z_pt1_ident.results()[1]
+            pt1_value = pt1_ident.results()[1]
             pt2 = QgsPoint((x - self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
@@ -1427,7 +1427,7 @@ class SelectMapTool(QgsMapTool):
             pt1 = QgsPoint(x, (y+self.y_res/2))
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
-            pt1_value = z_pt1_ident.results()[1]
+            pt1_value = pt1_ident.results()[1]
             pt2 = QgsPoint((x - self.x_res / 2), (y + self.y_res / 2))
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
@@ -1449,7 +1449,7 @@ class SelectMapTool(QgsMapTool):
             pt1 = QgsPoint(x, (y + self.y_res / 2))
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
-            pt1_value = z_pt1_ident.results()[1]
+            pt1_value = pt1_ident.results()[1]
             pt2 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
