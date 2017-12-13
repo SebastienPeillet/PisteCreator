@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>270</width>
-    <height>341</height>
+    <width>279</width>
+    <height>441</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -99,7 +99,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>110</y>
+      <y>150</y>
       <width>201</width>
       <height>41</height>
      </rect>
@@ -118,7 +118,7 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>120</y>
+      <y>160</y>
       <width>42</width>
       <height>22</height>
      </rect>
@@ -134,7 +134,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>230</y>
+      <y>310</y>
       <width>201</width>
       <height>41</height>
      </rect>
@@ -153,7 +153,7 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>240</y>
+      <y>320</y>
       <width>42</width>
       <height>22</height>
      </rect>
@@ -169,7 +169,7 @@
     <property name="geometry">
      <rect>
       <x>100</x>
-      <y>290</y>
+      <y>390</y>
       <width>75</width>
       <height>23</height>
      </rect>
@@ -182,7 +182,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>190</y>
+      <y>230</y>
       <width>201</width>
       <height>41</height>
      </rect>
@@ -201,7 +201,7 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>200</y>
+      <y>240</y>
       <width>42</width>
       <height>22</height>
      </rect>
@@ -217,7 +217,7 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>160</y>
+      <y>200</y>
       <width>42</width>
       <height>22</height>
      </rect>
@@ -233,7 +233,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>150</y>
+      <y>190</y>
       <width>201</width>
       <height>41</height>
      </rect>
@@ -252,7 +252,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>220</y>
+      <y>260</y>
       <width>171</width>
       <height>17</height>
      </rect>
@@ -268,7 +268,7 @@
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>260</y>
+      <y>340</y>
       <width>171</width>
       <height>17</height>
      </rect>
@@ -308,8 +308,175 @@
      <string>DEM Interpolate</string>
     </property>
    </widget>
+   <widget class="QLabel" name="ColorLabel">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>120</y>
+      <width>95</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>95</width>
+      <height>41</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>95</width>
+      <height>16777215</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>Ruberband colors :</string>
+    </property>
+   </widget>
+   <widget class="QgsColorButton" name="T_ColorButton">
+    <property name="geometry">
+     <rect>
+      <x>116</x>
+      <y>127</y>
+      <width>32</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="color">
+     <color alpha="0">
+      <red>0</red>
+      <green>255</green>
+      <blue>0</blue>
+     </color>
+    </property>
+   </widget>
+   <widget class="QgsColorButton" name="F_ColorButton">
+    <property name="geometry">
+     <rect>
+      <x>156</x>
+      <y>127</y>
+      <width>32</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="color">
+     <color alpha="0">
+      <red>255</red>
+      <green>0</green>
+      <blue>0</blue>
+     </color>
+    </property>
+   </widget>
+   <widget class="QgsColorButton" name="TL_ColorButton">
+    <property name="geometry">
+     <rect>
+      <x>201</x>
+      <y>278</y>
+      <width>32</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="color">
+     <color alpha="0">
+      <red>101</red>
+      <green>166</green>
+      <blue>101</blue>
+     </color>
+    </property>
+   </widget>
+   <widget class="QgsColorButton" name="FL_ColorButton">
+    <property name="geometry">
+     <rect>
+      <x>241</x>
+      <y>278</y>
+      <width>32</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="color">
+     <color alpha="0">
+      <red>130</red>
+      <green>54</green>
+      <blue>54</blue>
+     </color>
+    </property>
+   </widget>
+   <widget class="QLabel" name="ColorLabel2">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>270</y>
+      <width>175</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>175</width>
+      <height>41</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>150</width>
+      <height>16777215</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>Ruberband colors if length exceed : :</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="maxLengthLabel_2">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>350</y>
+      <width>95</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>95</width>
+      <height>41</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>95</width>
+      <height>16777215</height>
+     </size>
+    </property>
+    <property name="text">
+     <string>Buffer color :</string>
+    </property>
+   </widget>
+   <widget class="QgsColorButton" name="B_ColorButton">
+    <property name="geometry">
+     <rect>
+      <x>116</x>
+      <y>360</y>
+      <width>32</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="color">
+     <color alpha="0">
+      <red>0</red>
+      <green>255</green>
+      <blue>0</blue>
+     </color>
+    </property>
+   </widget>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QgsColorButton</class>
+   <extends>QPushButton</extends>
+   <header>qgis.gui</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

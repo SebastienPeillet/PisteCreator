@@ -26,6 +26,7 @@ import os
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal
 
+
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'PisteCreator_dockwidget_base.ui'))
 

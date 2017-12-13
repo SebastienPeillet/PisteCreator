@@ -34,7 +34,8 @@ class SlopeMapTool(QgsMapTool):
     def __init__(
         self, iface, callback, lines_layer, dem, side_distance,
         tolerated_a_slope, tolerated_c_slope, max_length, swath_distance,
-        max_length_hold, swath_display, interpolate_act
+        max_length_hold, swath_display, interpolate_act, t_color, f_color,
+        tl_color, fl_color, b_color
     ):
         QgsMapTool.__init__(self, iface.mapCanvas())
         self.iface = iface
@@ -53,6 +54,13 @@ class SlopeMapTool(QgsMapTool):
         self.tolerated_c_slope = tolerated_c_slope
         self.swath_distance = swath_distance
         self.interpolate_act = interpolate_act
+
+        # Color variables
+        self.t_color = QColor(t_color)
+        self.f_color = QColor(f_color)
+        self.tl_color = QColor(tl_color)
+        self.fl_color = QColor(fl_color)
+        self.b_color = QColor(b_color)
 
         # Chart variables
         self.line_geom = None
@@ -473,21 +481,21 @@ class SlopeMapTool(QgsMapTool):
                 rubber.addGeometry(
                     QgsGeometry.fromPolyline(geom)
                     .buffer(self.swath_distance, 20), None)
-        rubber.setColor(QColor(0, 255, 0, 255))
+        rubber.setColor(self.b_color)
         rubber.setWidth(2)
         return rubber
 
     def rubAnchorInit(self):
         """Parameter for the buffer rubberband (after segment construction)"""
         rubber = QgsRubberBand(self.canvas, True)
-        rubber.setColor(QColor(0, 255, 0, 255))
+        rubber.setColor(self.b_color)
         rubber.setWidth(3)
         return rubber
 
     def rubBuffCursorInit(self):
         """Parameter for the buffer rubberband around the cursor"""
         rubber = QgsRubberBand(self.canvas, True)
-        rubber.setColor(QColor(0, 255, 0, 255))
+        rubber.setColor(self.b_color)
         rubber.setWidth(2)
         return rubber
 
@@ -518,9 +526,9 @@ class SlopeMapTool(QgsMapTool):
                     and self.c_left_slope > -(self.tolerated_c_slope) \
                     and self.c_right_slope < self.tolerated_c_slope \
                     and self.c_right_slope > -(self.tolerated_c_slope):
-                self.rub_polyline.setColor(QColor(0, 255, 0))
+                self.rub_polyline.setColor(self.t_color)
             else:
-                self.rub_polyline.setColor(QColor(255, 0, 0))
+                self.rub_polyline.setColor(self.f_color)
         else:
             if self.a_slope < self.tolerated_a_slope \
                 and self.a_slope > -(self.tolerated_a_slope) \
@@ -528,9 +536,9 @@ class SlopeMapTool(QgsMapTool):
                     and self.c_left_slope > -(self.tolerated_c_slope) \
                     and self.c_right_slope < self.tolerated_c_slope \
                     and self.c_right_slope > -(self.tolerated_c_slope):
-                self.rub_polyline.setColor(QColor(101, 166, 101))
+                self.rub_polyline.setColor(self.tl_color)
             else:
-                self.rub_polyline.setColor(QColor(130, 54, 54))
+                self.rub_polyline.setColor(self.fl_color)
 
         if self.swath_display is True:
             self.rubDisplayUpRect(points)
@@ -552,7 +560,7 @@ class SlopeMapTool(QgsMapTool):
     def rubRectInit(self):
         """Parameter for the buffer rubberband during segment construction"""
         rubber = QgsRubberBand(self.canvas, True)
-        rubber.setColor(QColor(0, 255, 0, 255))
+        rubber.setColor(self.b_color)
         rubber.setWidth(2)
         return rubber
 

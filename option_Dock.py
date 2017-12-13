@@ -23,8 +23,10 @@
 
 import os
 
+from PyQt4.QtGui import QColor
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal
+from qgis.gui import QgsColorButton
 import ConfigParser
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -52,6 +54,10 @@ class GrumpyConfigParser(ConfigParser.ConfigParser):
                 fp.write("%s\n" % (key))
         fp.write("\n")
 
+def hex_to_rgb(value):
+    value = value.lstrip('#')
+    lv = len(value)
+    return list(int(value[i:i+lv/3], 16) for i in range(0, lv, lv/3))
 
 class OptionDock(QtGui.QDockWidget, FORM_CLASS):
 
@@ -114,6 +120,26 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
                 'calculation_variable', 'interpolate_act'
             )
         )
+        t_color = QColor(self.ConfigParser.get(
+                'graphical_visualisation', 't_color'
+            ))
+        f_color = QColor(self.ConfigParser.get(
+                'graphical_visualisation', 'f_color'
+            ))
+        tl_color = QColor(self.ConfigParser.get(
+                'graphical_visualisation', 'tl_color'
+            ))
+        fl_color = QColor(self.ConfigParser.get(
+                'graphical_visualisation', 'fl_color'
+            ))
+        b_color = QColor(self.ConfigParser.get(
+                'graphical_visualisation', 'b_color'
+            ))
+        self.T_ColorButton.setColor(t_color)
+        self.F_ColorButton.setColor(f_color)
+        self.TL_ColorButton.setColor(tl_color)
+        self.FL_ColorButton.setColor(fl_color)
+        self.B_ColorButton.setColor(b_color)
 
     def saveconfig(self):
         self.ConfigParser.set(
@@ -155,6 +181,31 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
             'calculation_variable',
             'interpolate_act',
             self.interpolCheckBox.isChecked()
+        )
+        self.ConfigParser.set(
+            'graphical_visualisation',
+            't_color',
+            self.T_ColorButton.color().name()
+        )
+        self.ConfigParser.set(
+            'graphical_visualisation',
+            'f_color',
+            self.F_ColorButton.color().name()
+        )
+        self.ConfigParser.set(
+            'graphical_visualisation',
+            'tl_color',
+            self.TL_ColorButton.color().name()
+        )
+        self.ConfigParser.set(
+            'graphical_visualisation',
+            'fl_color',
+            self.FL_ColorButton.color().name()
+        )
+        self.ConfigParser.set(
+            'graphical_visualisation',
+            'b_color',
+            self.B_ColorButton.color().name()
         )
         with open(
             os.path.join(

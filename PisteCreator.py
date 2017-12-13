@@ -394,12 +394,28 @@ class PisteCreator:
         interpolate_act = self.ConfigParser.getboolean(
             'calculation_variable', 'interpolate_act'
         )
+        t_color = self.ConfigParser.get(
+            'graphical_visualisation', 't_color'
+        )
+        f_color = self.ConfigParser.get(
+            'graphical_visualisation', 'f_color'
+        )
+        tl_color = self.ConfigParser.get(
+            'graphical_visualisation', 'tl_color'
+        )
+        fl_color = self.ConfigParser.get(
+            'graphical_visualisation', 'fl_color'
+        )
+        b_color = self.ConfigParser.get(
+            'graphical_visualisation', 'b_color'
+        )
 
         # 4 Activate Maptools
         ct = SlopeMapTool(
             self.iface,  self.displayXY, linesLayer, dem, side_distance,
             tolerated_a_slope, tolerated_c_slope, max_length, swath_distance,
-            max_length_hold, swath_display, interpolate_act
+            max_length_hold, swath_display, interpolate_act, t_color,f_color,
+            tl_color,fl_color,b_color
         )
         self.iface.mapCanvas().setMapTool(ct)
 
