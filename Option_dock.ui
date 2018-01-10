@@ -313,19 +313,19 @@
      <rect>
       <x>20</x>
       <y>120</y>
-      <width>95</width>
+      <width>180</width>
       <height>41</height>
      </rect>
     </property>
     <property name="minimumSize">
      <size>
-      <width>95</width>
+      <width>180</width>
       <height>41</height>
      </size>
     </property>
     <property name="maximumSize">
      <size>
-      <width>95</width>
+      <width>180</width>
       <height>16777215</height>
      </size>
     </property>
@@ -336,7 +336,7 @@
    <widget class="QgsColorButton" name="T_ColorButton">
     <property name="geometry">
      <rect>
-      <x>116</x>
+      <x>200</x>
       <y>127</y>
       <width>32</width>
       <height>27</height>
@@ -353,7 +353,7 @@
    <widget class="QgsColorButton" name="F_ColorButton">
     <property name="geometry">
      <rect>
-      <x>156</x>
+      <x>240</x>
       <y>127</y>
       <width>32</width>
       <height>27</height>
@@ -418,7 +418,7 @@
     </property>
     <property name="maximumSize">
      <size>
-      <width>150</width>
+      <width>175</width>
       <height>16777215</height>
      </size>
     </property>
@@ -431,19 +431,19 @@
      <rect>
       <x>30</x>
       <y>350</y>
-      <width>95</width>
+      <width>180</width>
       <height>41</height>
      </rect>
     </property>
     <property name="minimumSize">
      <size>
-      <width>95</width>
+      <width>180</width>
       <height>41</height>
      </size>
     </property>
     <property name="maximumSize">
      <size>
-      <width>95</width>
+      <width>180</width>
       <height>16777215</height>
      </size>
     </property>
@@ -454,7 +454,7 @@
    <widget class="QgsColorButton" name="B_ColorButton">
     <property name="geometry">
      <rect>
-      <x>116</x>
+      <x>220</x>
       <y>360</y>
       <width>32</width>
       <height>27</height>

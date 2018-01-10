@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="2.0">
+<!DOCTYPE TS>
+<TS version="2.0">
 <context>
     <name>DockWidget</name>
     <message>
@@ -13,67 +14,80 @@
         <translation>Distance latérale (m) :</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="68"/>
+        <location filename="../Option_dock.ui" line="69"/>
         <source>Graphical visualisation</source>
         <translation>Visualisation graphique</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="87"/>
+        <location filename="../Option_dock.ui" line="95"/>
         <source>Variable for slope calculation</source>
         <translation>Paramètres pour le calcul de pente</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="106"/>
+        <location filename="../Option_dock.ui" line="114"/>
         <source>Tolerated slope (along) in percent :</source>
         <translation>Pente tolérée en longueur (%) :</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="141"/>
+        <location filename="../Option_dock.ui" line="149"/>
         <source>Swath distance for harvest (m) :</source>
         <translation>Distance de câble de débusquage (m) :</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="170"/>
+        <location filename="../Option_dock.ui" line="178"/>
         <source>Save</source>
         <translation>Enregistrer</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="189"/>
+        <location filename="../Option_dock.ui" line="197"/>
         <source>Maximum length tolerated (m) :</source>
         <translation>Longueur maximale tolérée (m) :</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="240"/>
+        <location filename="../Option_dock.ui" line="248"/>
         <source>Tolerated slope (cross) in percent :</source>
         <translation>Pente tolérée en travers (%) :</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="253"/>
+        <location filename="../Option_dock.ui" line="261"/>
         <source>Hold distance</source>
         <translation>Bloquer la distance max</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="269"/>
+        <location filename="../Option_dock.ui" line="283"/>
         <source>Display buffer</source>
         <translation>Afficher zone tampon</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="282"/>
+        <location filename="../Option_dock.ui" line="308"/>
         <source>DEM Interpolate</source>
         <translation>Interpolation du MNT</translation>
+    </message>
+    <message>
+        <location filename="../Option_dock.ui" line="333"/>
+        <source>Ruberband colors :</source>
+        <translation>Couleurs de l&apos;aide graphique :</translation>
+    </message>
+    <message>
+        <location filename="../Option_dock.ui" line="426"/>
+        <source>Ruberband colors if length exceed : :</source>
+        <translation>Couleurs si distance max excédée :</translation>
+    </message>
+    <message>
+        <location filename="../Option_dock.ui" line="451"/>
+        <source>Buffer color :</source>
+        <translation>Couleur du buffer :</translation>
     </message>
 </context>
 <context>
     <name>PisteCreator</name>
     <message>
-        <location filename="../PisteCreator.py" line="225"/>
         <source>&amp;PisteCreator</source>
-        <translation>&amp;PisteCreator</translation>
+        <translation type="obsolete">&amp;PisteCreator</translation>
     </message>
     <message>
-        <location filename="../PisteCreator.py" line="184"/>
         <source>PisteCreator</source>
-        <translation>PisteCreator</translation>
+        <translation type="obsolete">PisteCreator</translation>
     </message>
 </context>
 <context>
@@ -93,7 +107,8 @@
         <source>Tracks Layer :</source>
         <translation>Couche de piste :</translation>
     </message>
-    <message encoding="UTF-8">
+    <message utf8="true">
+        <location filename="../PisteCreator_dockwidget_base.ui" line="56"/>
         <location filename="../PisteCreator_dockwidget_base.ui" line="77"/>
         <source>↺</source>
         <translation>↺</translation>
