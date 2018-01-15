@@ -63,7 +63,7 @@ class SlopeMapTool(QgsMapTool):
         self.b_color = QColor(b_color)
 
         # Chart variables
-        self.line_geom = None
+        self.line_geom = []
         self.aslope_list = []
         self.c_left_slope_list = []
         self.c_right_slope_list = []
@@ -72,6 +72,7 @@ class SlopeMapTool(QgsMapTool):
         self.edit = False
         self.point1coord = None
         self.point2coord = None
+        self.next_point = None
         self.a_slope = None
         self.c_left_slope = None
         self.c_right_slope = None
@@ -87,6 +88,7 @@ class SlopeMapTool(QgsMapTool):
             self.rub_buff_cursor = self.rubBuffCursorInit()
         self.rub_cursor = self.rubCursorInit()
         self.rub_polyline = self.rubPolylineInit()
+        self.rub_helpline = self.rubHelpLineInit()
 
         # Snap config
         self.snapper = self.snapperDef()
@@ -161,7 +163,6 @@ class SlopeMapTool(QgsMapTool):
             and self.point1coord != self.point2coord
         ):
             self.rubDisplayUp()
-
         return None
 
     # Event when user clicks with the mouse
@@ -223,6 +224,7 @@ class SlopeMapTool(QgsMapTool):
                         self.rub_rect_anchor.addGeometry(
                             QgsGeometry.fromPolyline(geom)
                             .buffer(self.swath_distance, 20), None)
+                    self.helpToNext(previousPoint, point)
 
             else:
                 # Double click
@@ -375,15 +377,155 @@ class SlopeMapTool(QgsMapTool):
             self.rub_buff_cursor.reset()
         self.rub_polyline.reset()
         self.rub_cursor.reset()
+        self.rub_helpline.reset()
         self.lines_layer.updateFields()
         self.lines_layer.commitChanges()
         self.callback(None, None, None, None, None, None, None, None, False)
 
-    # Event when user uses 'backspace'
+    # Help to next point visualisation
+    def helpToNext(self, sP, eP, dist=None):
+        self.next_point = None
+        self.rub_helpline.reset()
+        if dist is None:
+            dist = self.max_length
+        azimuth = sP.azimuth(eP)
+
+        if self.a_slope > 0:
+            wanted_a_slope = self.tolerated_a_slope
+        else:
+            wanted_a_slope = -self.tolerated_a_slope
+
+        diff = None
+        best = 100
+        xp, yp = eP
+        az = math.radians(azimuth)
+        cosa = math.sin(az)
+        cosb = math.cos(az)
+
+        next_point = QgsPoint(xp+(dist*cosa), yp+(dist*cosb))
+        a_slope, _, _, _ = self.slopeCalc(eP, next_point)
+        if math.fabs(a_slope) < math.fabs(wanted_a_slope):
+            diff = a_slope - wanted_a_slope
+            best = math.fabs(diff)
+
+        if best < 0.03:
+            self.next_point = next_point
+            points = [eP, next_point]
+            self.rub_helpline.addGeometry(
+                QgsGeometry.fromPolyline(points), None
+            )
+        else:
+            alpha_b = None
+            for alpha in range(10, 610, 5):
+                alpha = alpha / 10
+                az1 = math.radians(azimuth-alpha)
+                cosa1 = math.sin(az1)
+                cosb1 = math.cos(az1)
+                az2 = math.radians(azimuth+alpha)
+                cosa2 = math.sin(az2)
+                cosb2 = math.cos(az2)
+
+                next_point1 = QgsPoint(xp+(dist*cosa1), yp+(dist*cosb1))
+                a_slope1, _, _, _ = self.slopeCalc(eP, next_point1)
+                next_point2 = QgsPoint(xp+(dist*cosa2), yp+(dist*cosb2))
+                a_slope2, _, _, _ = self.slopeCalc(eP, next_point2)
+
+                if math.fabs(a_slope1) < math.fabs(wanted_a_slope):
+                    diff1 = a_slope1 - wanted_a_slope
+                    if math.fabs(diff1) < best:
+                        best = math.fabs(diff1)
+                        alpha_b = -alpha
+                        if best < 0.03:
+                            print best
+                            self.next_point = next_point1
+                            points = [eP, next_point1]
+                            self.rub_helpline.reset()
+                            self.rub_helpline.addGeometry(
+                                QgsGeometry.fromPolyline(points), None
+                            )
+                            break
+                if math.fabs(a_slope2) < math.fabs(wanted_a_slope):
+                    diff2 = a_slope2 - wanted_a_slope
+                    if math.fabs(diff2) < best:
+                        best = math.fabs(diff2)
+                        alpha_b = alpha
+                        if best < 0.03:
+                            self.next_point = next_point2
+                            print best
+                            points = [eP, next_point2]
+                            self.rub_helpline.reset()
+                            self.rub_helpline.addGeometry(
+                                QgsGeometry.fromPolyline(points), None
+                            )
+                            break
+
+            if alpha_b is not None:
+                az = math.radians(azimuth+alpha_b)
+                print best
+                cosa = math.sin(az)
+                cosb = math.cos(az)
+                next_point = QgsPoint(
+                    xp+(dist*cosa), yp+(dist*cosb)
+                )
+                self.next_point = next_point
+                points = [eP, next_point]
+                self.rub_helpline.reset()
+                self.rub_helpline.addGeometry(
+                    QgsGeometry.fromPolyline(points), None
+                )
+
+    def helpConstruct(self):
+        previousPoint = self.point1coord
+        pt = QgsPoint(self.next_point)
+        if self.interpolate_act is True:
+            self.a_slope, self.c_left_slope, \
+                self.c_right_slope, self.length = \
+                self.slopeCalc(self.point1coord, pt)
+        else:
+            self.a_slope, self.c_left_slope, \
+                self.c_right_slope, self.length = \
+                self.slopeCalcWithoutInterpolate(
+                    self.point1coord,
+                    pt
+                )
+
+        ids = [i.id() for i in self.lines_layer.getFeatures()]
+        id = ids[-1]
+        iterator = self.lines_layer.getFeatures(
+            QgsFeatureRequest().setFilterFid(id)
+        )
+        ft = next(iterator)
+        geom = ft.geometry().asPolyline()
+        # Add vertices
+        geom.append(pt)
+        self.line_geom = geom
+        self.aslope_list.append(math.fabs(self.a_slope))
+        self.c_left_slope_list.append(math.fabs(self.c_left_slope))
+        self.c_right_slope_list.append(
+            math.fabs(self.c_right_slope))
+        self.callback(
+            self.a_slope, self.c_left_slope, self.c_right_slope,
+            self.length, self.line_geom, self.aslope_list,
+            self.c_left_slope_list, self.c_right_slope_list, True)
+        pr = self.lines_layer.dataProvider()
+        pr.changeGeometryValues(
+            {ft.id(): QgsGeometry.fromPolyline(geom)})
+        self.canvas.refresh()
+        if self.swath_display is True:
+            self.rub_rect_anchor.reset()
+            self.rub_rect_anchor.addGeometry(
+                QgsGeometry.fromPolyline(geom)
+                .buffer(self.swath_distance, 20), None)
+        self.helpToNext(previousPoint, pt)
+        self.point1coord = pt
+
+    # Event when user uses 'backspace', 'escape' or 'space'
     def keyPressEvent(self, e):
         """Key event :
             - backspace : erase the last point created
             - escape : erase the current track"""
+        enter = u'\x0D'
+        asterisk = u'\x2A'
         back_value = u'\x08'
         escape = u'\x1B'
         if e.text() == back_value:
@@ -449,12 +591,27 @@ class SlopeMapTool(QgsMapTool):
                 self.lines_layer.startEditing()
                 self.reset()
                 self.canvas.refresh()
+        elif e.text() == enter:
+            if self.edit is True and self.next_point is not None:
+                self.helpConstruct()
+                self.rubDisplayUp()
+        elif e.text() == asterisk:
+            if (
+                self.edit is True and self.point1coord is not None
+                and self.point2coord is not None
+            ):
+                dist_seg = round(math.sqrt(
+                    self.point1coord.sqrDist(self.point2coord)
+                ), 2)
+                self.helpToNext(
+                    self.line_geom[-2], self.line_geom[-1], dist_seg
+                )
 
     # When user ends a track
     def reset(self):
         """Reset every variable from the edition, ready to start a new track"""
         self.edit = False
-        self.line_geom = None
+        self.line_geom = []
         self.point1coord = None
         self.point2coord = None
         self.a_slope = None
@@ -465,6 +622,7 @@ class SlopeMapTool(QgsMapTool):
         self.c_left_slope_list = []
         self.c_right_slope_list = []
         self.rub_polyline.reset()
+        self.rub_helpline.reset()
         if self.swath_display is True:
             self.rub_rect.reset()
             self.rub_rect_anchor.reset()
@@ -550,6 +708,13 @@ class SlopeMapTool(QgsMapTool):
         self.rub_rect.addGeometry(
             QgsGeometry.fromPolyline(points)
             .buffer(self.swath_distance, 20), None)
+
+    def rubHelpLineInit(self):
+        """Parameter for the segment rubberband during segment construction"""
+        rubber = QgsRubberBand(self.canvas, False)
+        rubber.setColor(self.b_color)
+        rubber.setWidth(2)
+        return rubber
 
     def rubPolylineInit(self):
         """Parameter for the segment rubberband during segment construction"""
