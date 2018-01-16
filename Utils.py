@@ -390,7 +390,7 @@ class SlopeMapTool(QgsMapTool):
             dist = self.max_length
         azimuth = sP.azimuth(eP)
 
-        if self.a_slope > 0:
+        if self.aslope_list[-1] > 0:
             wanted_a_slope = self.tolerated_a_slope
         else:
             wanted_a_slope = -self.tolerated_a_slope
@@ -406,7 +406,8 @@ class SlopeMapTool(QgsMapTool):
         a_slope, _, _, _ = self.slopeCalc(eP, next_point)
         if math.fabs(a_slope) < math.fabs(wanted_a_slope):
             diff = a_slope - wanted_a_slope
-            best = math.fabs(diff)
+            if math.fabs(diff)< math.fabs(wanted_a_slope):
+                best = math.fabs(diff)
 
         if best < 0.03:
             self.next_point = next_point
@@ -432,7 +433,10 @@ class SlopeMapTool(QgsMapTool):
 
                 if math.fabs(a_slope1) < math.fabs(wanted_a_slope):
                     diff1 = a_slope1 - wanted_a_slope
-                    if math.fabs(diff1) < best:
+                    if (
+                        math.fabs(diff1) < best 
+                        and math.fabs(diff1)< math.fabs(wanted_a_slope)
+                    ):
                         best = math.fabs(diff1)
                         alpha_b = -alpha
                         if best < 0.03:
@@ -446,7 +450,10 @@ class SlopeMapTool(QgsMapTool):
                             break
                 if math.fabs(a_slope2) < math.fabs(wanted_a_slope):
                     diff2 = a_slope2 - wanted_a_slope
-                    if math.fabs(diff2) < best:
+                    if (
+                        math.fabs(diff2) < best 
+                        and math.fabs(diff2)< math.fabs(wanted_a_slope)
+                    ):
                         best = math.fabs(diff2)
                         alpha_b = alpha
                         if best < 0.03:
@@ -473,6 +480,14 @@ class SlopeMapTool(QgsMapTool):
                 self.rub_helpline.addGeometry(
                     QgsGeometry.fromPolyline(points), None
                 )
+            elif best != 100:
+                self.next_point = next_point
+                points = [eP, next_point]
+                self.rub_helpline.addGeometry(
+                    QgsGeometry.fromPolyline(points), None
+                )
+                
+                
 
     def helpConstruct(self):
         previousPoint = self.point1coord
