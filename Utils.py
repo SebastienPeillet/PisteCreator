@@ -96,6 +96,52 @@ class SlopeMapTool(QgsMapTool):
         self.snapper = self.snapperDef()
         return None
 
+    # Event when user doubleclicks with the mouse
+    def canvasDoubleClickEvent(self, e):
+        """A double click ends the track edition."""
+        if self.edit is True:
+            pr = self.lines_layer.dataProvider()
+            ids = [i.id() for i in self.lines_layer.getFeatures()]
+            id = ids[-1]
+            iterator = self.lines_layer.getFeatures(
+                QgsFeatureRequest().setFilterFid(id))
+            ft = next(iterator)
+            geom = ft.geometry().asPolyline()
+            if self.swath_display is True:
+                self.rub_rect_anchors.addGeometry(
+                    QgsGeometry.fromPolyline(geom)
+                    .buffer(self.swath_distance, 20), None)
+            if pr.fieldNameIndex('id') == -1:
+                pr.addAttributes([QgsField('id', QVariant.Int, "int", 6)])
+                self.lines_layer.updateFields()
+            id_max = 0
+            for feat in self.lines_layer.getFeatures():
+                id = feat.attribute('id')
+                try:
+                    id_max = max(id_max, int(id))
+                except:
+                    pass
+            new_id = int(id_max) + 1
+            index = self.lines_layer.fieldNameIndex("id")
+            self.lines_layer.changeAttributeValue(ft.id(), index, new_id)
+            self.lines_layer.commitChanges()
+            self.lines_layer.startEditing()
+            if pr.fieldNameIndex('length') == -1:
+                pr.addAttributes(
+                    [QgsField('length', QVariant.Double, "double", 6, 1)])
+                self.lines_layer.updateFields()
+            expression = QgsExpression("$length")
+            index = self.lines_layer.fieldNameIndex("length")
+            value = expression.evaluate(ft)
+            self.lines_layer.changeAttributeValue(ft.id(), index, value)
+            self.lines_layer.changeAttributeValue(ft.id(), index, value)
+            self.lines_layer.commitChanges()
+            self.lines_layer.startEditing()
+            self.reset()
+            self.callback(
+                '', '', '', '', self.line_geom, self.aslope_list,
+                self.c_left_slope_list, self.c_right_slope_list, False)
+
     # Event when user move the mouse :
     # it will define a second point and launch slopeCalc function.
     def canvasMoveEvent(self, e):
@@ -170,7 +216,7 @@ class SlopeMapTool(QgsMapTool):
     # Event when user clicks with the mouse
     def canvasReleaseEvent(self, e):
         """Add new point on the track line.
-        A double click or a right click end the track edition."""
+        A right click ends the track edition."""
         previousPoint = self.point1coord
         point = self.point2coord
         self.point1coord = point
@@ -230,51 +276,6 @@ class SlopeMapTool(QgsMapTool):
                         self.helpToNext(previousPoint, point)
                     if self.edit is False:
                         self.reset()
-
-            else:
-                # Double click
-                pr = self.lines_layer.dataProvider()
-                ids = [i.id() for i in self.lines_layer.getFeatures()]
-                id = ids[-1]
-                iterator = self.lines_layer.getFeatures(
-                    QgsFeatureRequest().setFilterFid(id))
-                ft = next(iterator)
-                geom = ft.geometry().asPolyline()
-                if self.swath_display is True:
-                    self.rub_rect_anchors.addGeometry(
-                        QgsGeometry.fromPolyline(geom)
-                        .buffer(self.swath_distance, 20), None)
-                if pr.fieldNameIndex('id') == -1:
-                    pr.addAttributes([QgsField('id', QVariant.Int, "int", 6)])
-                    self.lines_layer.updateFields()
-                id_max = 0
-                for feat in self.lines_layer.getFeatures():
-                    id = feat.attribute('id')
-                    try :
-                        id_max = max(id_max, int(id))
-                    except:
-                        pass
-                new_id = int(id_max) + 1
-                index = self.lines_layer.fieldNameIndex("id")
-                self.lines_layer.changeAttributeValue(ft.id(), index, new_id)
-                self.lines_layer.commitChanges()
-                self.lines_layer.startEditing()
-                if pr.fieldNameIndex('length') == -1:
-                    pr.addAttributes(
-                        [QgsField('length', QVariant.Double, "double", 6, 1)])
-                    self.lines_layer.updateFields()
-                expression = QgsExpression("$length")
-                index = self.lines_layer.fieldNameIndex("length")
-                value = expression.evaluate(ft)
-                self.lines_layer.changeAttributeValue(ft.id(), index, value)
-                self.lines_layer.changeAttributeValue(ft.id(), index, value)
-                self.lines_layer.commitChanges()
-                self.lines_layer.startEditing()
-                self.reset()
-                self.rub_helpline.reset()
-                self.callback(
-                    '', '', '', '', self.line_geom, self.aslope_list,
-                    self.c_left_slope_list, self.c_right_slope_list, False)
         # Right click
         else:
             if self.edit is True:
@@ -337,7 +338,6 @@ class SlopeMapTool(QgsMapTool):
             self.callback(
                 '', '', '', '', self.line_geom, self.aslope_list,
                 self.c_left_slope_list, self.c_right_slope_list, False)
-
         return None
 
     # Event when user closes the plugin
@@ -416,7 +416,7 @@ class SlopeMapTool(QgsMapTool):
         a_slope, _, _, _ = self.slopeCalc(eP, next_point)
         if math.fabs(a_slope) < math.fabs(wanted_a_slope):
             diff = a_slope - wanted_a_slope
-            if math.fabs(diff)< math.fabs(wanted_a_slope):
+            if math.fabs(diff) < math.fabs(wanted_a_slope):
                 best = math.fabs(diff)
 
         if best < 0.03:
@@ -444,8 +444,8 @@ class SlopeMapTool(QgsMapTool):
                 if math.fabs(a_slope1) < math.fabs(wanted_a_slope):
                     diff1 = a_slope1 - wanted_a_slope
                     if (
-                        math.fabs(diff1) < best 
-                        and math.fabs(diff1)< math.fabs(wanted_a_slope)
+                        math.fabs(diff1) < best
+                        and math.fabs(diff1) < math.fabs(wanted_a_slope)
                     ):
                         best = math.fabs(diff1)
                         alpha_b = -alpha
@@ -461,8 +461,8 @@ class SlopeMapTool(QgsMapTool):
                 if math.fabs(a_slope2) < math.fabs(wanted_a_slope):
                     diff2 = a_slope2 - wanted_a_slope
                     if (
-                        math.fabs(diff2) < best 
-                        and math.fabs(diff2)< math.fabs(wanted_a_slope)
+                        math.fabs(diff2) < best
+                        and math.fabs(diff2) < math.fabs(wanted_a_slope)
                     ):
                         best = math.fabs(diff2)
                         alpha_b = alpha
@@ -496,7 +496,7 @@ class SlopeMapTool(QgsMapTool):
                 self.rub_helpline.addGeometry(
                     QgsGeometry.fromPolyline(points), None
                 )
-                
+
     def helpConstruct(self):
         previousPoint = self.point1coord
         pt = QgsPoint(self.next_point)
@@ -545,6 +545,9 @@ class SlopeMapTool(QgsMapTool):
     # Event when user uses 'backspace', 'escape' or 'space'
     def keyPressEvent(self, e):
         """Key event :
+            - enter : use the assisted track solution to add a point on line
+            - asterisk : calculate the assisted_track solution for a
+            particular length (between last point and cursor)
             - backspace : erase the last point created
             - escape : erase the current track"""
         enter = u'\x0D'
@@ -584,7 +587,7 @@ class SlopeMapTool(QgsMapTool):
                             .buffer(self.swath_distance, 20), None)
                     if self.assisted_track is True:
                         previousPoint = geom[-2]
-                        self.helpToNext(previousPoint,self.point1coord)
+                        self.helpToNext(previousPoint, self.point1coord)
                 else:
                     self.lines_layer.commitChanges()
                     self.lines_layer.startEditing()
@@ -594,6 +597,7 @@ class SlopeMapTool(QgsMapTool):
                     self.reset()
                     self.canvas.refresh()
         elif e.text() == escape:
+            # Erase current line
             if self.edit is True:
                 self.lines_layer.commitChanges()
                 self.lines_layer.startEditing()
@@ -618,16 +622,18 @@ class SlopeMapTool(QgsMapTool):
                 self.reset()
                 self.canvas.refresh()
         elif e.text() == enter:
+            # Add point with assisted_track
             if (
-                self.edit is True 
-                and self.assisted_track is True 
+                self.edit is True
+                and self.assisted_track is True
                 and self.next_point is not None
             ):
                 self.helpConstruct()
                 self.rubDisplayUp()
         elif e.text() == asterisk:
+            # change length to found the assisted track solution
             if (
-                self.edit is True 
+                self.edit is True
                 and self.assisted_track is True
                 and self.point1coord is not None
                 and self.point2coord is not None
