@@ -78,6 +78,11 @@
         <source>Buffer color :</source>
         <translation>Couleur du buffer :</translation>
     </message>
+    <message>
+        <location filename="../Option_dock.ui" line="504"/>
+        <source>Assisted_track :</source>
+        <translation>Tracé assisté</translation>
+    </message>
 </context>
 <context>
     <name>PisteCreator</name>
