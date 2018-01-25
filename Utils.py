@@ -1055,7 +1055,7 @@ class SlopeMapTool(QgsMapTool):
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint((x + self / x_res / 2), (y + self.y_res / 2))
+            pt3 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
