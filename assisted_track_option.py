@@ -23,7 +23,7 @@
 
 import os
 
-from PyQt4 import QtGui, uic
+from PyQt4 import QtGui, uic, QtCore
 from PyQt4.QtCore import pyqtSignal
 
 
@@ -34,12 +34,20 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class AssistedTrackOption(QtGui.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
+    keyPressed = QtCore.pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, dock, parent=None):
         """Constructor."""
         super(AssistedTrackOption, self).__init__(parent)
 
         self.setupUi(self)
+        self.key = None
+        
+
+    def keyPressEvent(self, e):
+        super(AssistedTrackOption, self).keyPressEvent(e)
+        self.key = e
+        self.keyPressed.emit()
 
     def closeEvent(self, event):
         """Clove event"""

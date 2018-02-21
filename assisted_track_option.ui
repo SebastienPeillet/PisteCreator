@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Assisted track option</string>
+   <string>Assisted Track Option</string>
   </property>
   <widget class="QRadioButton" name="echapButton">
    <property name="geometry">
@@ -37,6 +37,9 @@
    <property name="text">
     <string>Echappement</string>
    </property>
+   <attribute name="buttonGroup">
+    <string notr="true">AOptGroup</string>
+   </attribute>
   </widget>
   <widget class="QRadioButton" name="cloisButton">
    <property name="geometry">
@@ -50,6 +53,9 @@
    <property name="text">
     <string>Cloisonnement</string>
    </property>
+   <attribute name="buttonGroup">
+    <string notr="true">AOptGroup</string>
+   </attribute>
   </widget>
   <widget class="QRadioButton" name="desacButton">
    <property name="geometry">
@@ -63,8 +69,14 @@
    <property name="text">
     <string>Désactivé</string>
    </property>
+   <attribute name="buttonGroup">
+    <string notr="true">AOptGroup</string>
+   </attribute>
   </widget>
  </widget>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="AOptGroup"/>
+ </buttongroups>
 </ui>

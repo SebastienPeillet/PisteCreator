@@ -412,16 +412,13 @@ class PisteCreator:
         a_color = self.ConfigParser.get(
             'graphical_visualisation', 'a_color'
         )
-        assisted_track = self.ConfigParser.getboolean(
-            'graphical_visualisation', 'assisted_track'
-        )
 
         # 4 Activate Maptools
         ct = SlopeMapTool(
             self.iface,  self.displayXY, linesLayer, dem, side_distance,
             tolerated_a_slope, tolerated_c_slope, max_length, swath_distance,
             max_length_hold, swath_display, interpolate_act, t_color,f_color,
-            tl_color, fl_color, b_color, a_color, assisted_track
+            tl_color, fl_color, b_color, a_color
         )
         self.iface.mapCanvas().setMapTool(ct)
 

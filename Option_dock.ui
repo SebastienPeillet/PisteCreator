@@ -485,20 +485,14 @@
      </color>
     </property>
    </widget>
-   <widget class="QCheckBox" name="AssistCheckBox">
+   <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
       <x>30</x>
-      <y>390</y>
-      <width>171</width>
-      <height>41</height>
+      <y>407</y>
+      <width>121</width>
+      <height>16</height>
      </rect>
-    </property>
-    <property name="minimumSize">
-     <size>
-      <width>171</width>
-      <height>0</height>
-     </size>
     </property>
     <property name="text">
      <string>Assisted_track :</string>

@@ -144,11 +144,6 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
         self.FL_ColorButton.setColor(fl_color)
         self.B_ColorButton.setColor(b_color)
         self.A_ColorButton.setColor(a_color)
-        self.AssistCheckBox.setChecked(
-            self.ConfigParser.getboolean(
-                'graphical_visualisation', 'assisted_track'
-            )
-        )
 
     def saveconfig(self):
         self.ConfigParser.set(
@@ -221,11 +216,7 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
             'a_color',
             self.A_ColorButton.color().name()
         )
-        self.ConfigParser.set(
-            'graphical_visualisation',
-            'assisted_track',
-            self.AssistCheckBox.isChecked()
-        )
+
         with open(
             os.path.join(
                 os.path.abspath(os.path.dirname(__file__)), 'option.cfg'
