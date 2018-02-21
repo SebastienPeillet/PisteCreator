@@ -25,7 +25,8 @@ from qgis.gui import QgsRubberBand, QgsMapToolIdentify, QgsMapTool
 from qgis.core import QgsGeometry, QgsPoint, QgsFeature, QgsRaster, \
     QgsFeatureRequest, QgsSnappingUtils, QgsExpression, QgsField
 from PyQt4.QtGui import QColor
-from PyQt4.QtCore import QVariant
+from PyQt4.QtCore import QVariant, Qt
+from assisted_track_option import AssistedTrackOption
 import math
 import time
 
@@ -55,6 +56,10 @@ class SlopeMapTool(QgsMapTool):
         self.swath_distance = swath_distance
         self.interpolate_act = interpolate_act
         self.assisted_track = assisted_track
+        self.assisted_track_option = AssistedTrackOption()
+        self.iface.addDockWidget(Qt.TopDockWidgetArea, self.assisted_track_option)
+        self.assisted_track_option.setFloating(True)
+        self.assisted_track_option.show()
 
         # Color variables
         self.t_color = QColor(t_color)
