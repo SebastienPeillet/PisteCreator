@@ -68,6 +68,7 @@ class SlopeMapTool(QgsMapTool):
         # Chart variables
         self.line_geom = []
         self.aslope_list = []
+        self.real_aslope_list = []
         self.c_left_slope_list = []
         self.c_right_slope_list = []
 
@@ -282,6 +283,7 @@ class SlopeMapTool(QgsMapTool):
                     # Add vertices
                     geom.append(pt)
                     self.line_geom = geom
+                    self.real_aslope_list.append(self.a_slope)
                     self.aslope_list.append(math.fabs(self.a_slope))
                     self.c_left_slope_list.append(math.fabs(self.c_left_slope))
                     self.c_right_slope_list.append(
@@ -316,6 +318,7 @@ class SlopeMapTool(QgsMapTool):
                     # Add vertices
                     geom.append(pt)
                     self.line_geom = geom
+                    self.real_aslope_list.append(self.a_slope)
                     self.aslope_list.append(math.fabs(self.a_slope))
                     self.c_left_slope_list.append(math.fabs(self.c_left_slope))
                     self.c_right_slope_list.append(
@@ -431,11 +434,14 @@ class SlopeMapTool(QgsMapTool):
         print method
 
         if method == 'e' :
-            if self.aslope_list[-1] > 0:
+            print self.real_aslope_list[-1]
+            if self.real_aslope_list[-1] > 0.0:
+                last_aslope = 'p'
                 wanted_a_slope = self.tolerated_a_slope
             else:
+                last_aslope = 'n'
                 wanted_a_slope = -self.tolerated_a_slope
-
+            print wanted_a_slope
             diff = None
             best = 100
             xp, yp = eP
@@ -445,10 +451,14 @@ class SlopeMapTool(QgsMapTool):
 
             next_point = QgsPoint(xp+(dist*cosa), yp+(dist*cosb))
             a_slope, _, _, _ = self.slopeCalc(eP, next_point)
-            if math.fabs(a_slope) < math.fabs(wanted_a_slope):
-                diff = a_slope - wanted_a_slope
-                if math.fabs(diff) < math.fabs(wanted_a_slope):
-                    best = math.fabs(diff)
+            if last_aslope == 'p' and a_slope > 0.0 :
+                if a_slope < wanted_a_slope :
+                    best = wanted_a_slope - a_slope
+
+            elif last_aslope == 'n' and a_slope < 0.0 :
+                if a_slope > wanted_a_slope :
+                    print  str(a_slope)+' > '+str(wanted_a_slope)
+                    best = a_slope - wanted_a_slope
 
             if best < 0.03:
                 self.next_point = next_point
@@ -472,40 +482,52 @@ class SlopeMapTool(QgsMapTool):
                     next_point2 = QgsPoint(xp+(dist*cosa2), yp+(dist*cosb2))
                     a_slope2, _, _, _ = self.slopeCalc(eP, next_point2)
 
-                    if math.fabs(a_slope1) < math.fabs(wanted_a_slope):
-                        diff1 = a_slope1 - wanted_a_slope
-                        if (
-                            math.fabs(diff1) < best
-                            and math.fabs(diff1) < math.fabs(wanted_a_slope)
-                        ):
-                            best = math.fabs(diff1)
-                            alpha_b = -alpha
-                            if best < 0.03:
-                                print best
-                                self.next_point = next_point1
-                                points = [eP, next_point1]
-                                self.rub_helpline.reset()
-                                self.rub_helpline.addGeometry(
-                                    QgsGeometry.fromPolyline(points), None
-                                )
-                                break
-                    if math.fabs(a_slope2) < math.fabs(wanted_a_slope):
-                        diff2 = a_slope2 - wanted_a_slope
-                        if (
-                            math.fabs(diff2) < best
-                            and math.fabs(diff2) < math.fabs(wanted_a_slope)
-                        ):
-                            best = math.fabs(diff2)
-                            alpha_b = alpha
-                            if best < 0.03:
-                                self.next_point = next_point2
-                                print best
-                                points = [eP, next_point2]
-                                self.rub_helpline.reset()
-                                self.rub_helpline.addGeometry(
-                                    QgsGeometry.fromPolyline(points), None
-                                )
-                                break
+                    if last_aslope == 'p' and a_slope1 > 0 :
+                        if a_slope1 < wanted_a_slope:
+                            diff1 = wanted_a_slope - a_slope1
+                            if diff1 < best:
+                                best = diff1
+                                alpha_b = -alpha
+                    elif last_aslope == 'n' and a_slope1 < 0 : 
+                        if a_slope1 > wanted_a_slope:
+                            print  str(a_slope1)+' > '+str(wanted_a_slope)
+                            diff1 = a_slope1 - wanted_a_slope
+                            if diff1 < best:
+                                best = diff1
+                                alpha_b = -alpha
+                    if best < 0.03:
+                        print best
+                        self.next_point = next_point1
+                        points = [eP, next_point1]
+                        self.rub_helpline.reset()
+                        self.rub_helpline.addGeometry(
+                            QgsGeometry.fromPolyline(points), None
+                        )
+                        break
+
+
+                    if last_aslope == 'p' and a_slope2 > 0 :
+                        if a_slope2 < wanted_a_slope:
+                            diff2 = wanted_a_slope - a_slope2
+                            if diff2 < best:
+                                best = diff2
+                                alpha_b = alpha
+                    elif last_aslope == 'n' and a_slope2 < 0 : 
+                        if a_slope2 > wanted_a_slope:
+                            print  str(a_slope2)+' > '+str(wanted_a_slope)
+                            diff2 = a_slope2 - wanted_a_slope
+                            if diff2 < best:
+                                best = diff2
+                                alpha_b = alpha
+                    if best < 0.03:
+                        print best
+                        self.next_point = next_point1
+                        points = [eP, next_point1]
+                        self.rub_helpline.reset()
+                        self.rub_helpline.addGeometry(
+                            QgsGeometry.fromPolyline(points), None
+                        )
+                        break
 
                 if alpha_b is not None:
                     az = math.radians(azimuth+alpha_b)
@@ -522,6 +544,7 @@ class SlopeMapTool(QgsMapTool):
                         QgsGeometry.fromPolyline(points), None
                     )
                 elif best != 100:
+                    print best
                     self.next_point = next_point
                     points = [eP, next_point]
                     self.rub_helpline.addGeometry(
@@ -529,7 +552,7 @@ class SlopeMapTool(QgsMapTool):
                     )
 
         elif method == 'c' :
-            if self.aslope_list[-1] > 0:
+            if self.real_aslope_list[-1] > 0.0:
                 wanted_a_slope = self.tolerated_a_slope
             else:
                 wanted_a_slope = -self.tolerated_a_slope
@@ -648,6 +671,7 @@ class SlopeMapTool(QgsMapTool):
         # Add vertices
         geom.append(pt)
         self.line_geom = geom
+        self.real_aslope_list.append(self.a_slope)
         self.aslope_list.append(math.fabs(self.a_slope))
         self.c_left_slope_list.append(math.fabs(self.c_left_slope))
         self.c_right_slope_list.append(
@@ -784,6 +808,7 @@ class SlopeMapTool(QgsMapTool):
         self.c_right_slope = None
         self.length = None
         self.aslope_list = []
+        self.real_aslope_list = []
         self.c_left_slope_list = []
         self.c_right_slope_list = []
         self.rub_polyline.reset()
@@ -1361,6 +1386,7 @@ class SelectMapTool(QgsMapTool):
         # Chart variables
         self.line_geom = None
         self.aslope_list = [0]
+        self.real_aslope_list = [0]
         self.c_left_slope_list = [0]
         self.c_right_slope_list = [0]
 
@@ -1411,6 +1437,7 @@ class SelectMapTool(QgsMapTool):
                         self.c_right_slope, self.length = (
                             self.slopeCalc(geom[i], geom[i+1]))
                     if self.length != 0:
+                        self.real_aslope_list.append(self.a_slope)
                         self.aslope_list.append(math.fabs(self.a_slope))
                         self.c_left_slope_list.append(
                             math.fabs(self.c_left_slope))
@@ -1425,6 +1452,7 @@ class SelectMapTool(QgsMapTool):
                             self.slopeCalcWithoutInterpolate(
                                 geom[i], geom[i+1]))
                     if self.length != 0:
+                        self.real_aslope_list.append(self.a_slope)
                         self.aslope_list.append(math.fabs(self.a_slope))
                         self.c_left_slope_list.append(
                             math.fabs(self.c_left_slope))
@@ -1445,6 +1473,7 @@ class SelectMapTool(QgsMapTool):
         """Reset attributes"""
         self.line_geom = None
         self.aslope_list = [0]
+        self.real_aslope_list = [0]
         self.c_left_slope_list = [0]
         self.c_right_slope_list = [0]
         self.rub_polyline.reset()
