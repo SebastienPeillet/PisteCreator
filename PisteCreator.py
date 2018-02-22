@@ -88,6 +88,7 @@ class PisteCreator:
         self.dockwidget = None
         self.optionDock = None
         self.graph_widget = None
+        self.PisteCreatorTool = None
         self.vect_list = []
         self.rast_list = []
         self.ConfigParser = None
@@ -333,11 +334,11 @@ class PisteCreator:
 
         # 4 Activate Maptools
 
-        st = SelectMapTool(
+        self.PisteCreatorTool = SelectMapTool(
             self.iface,  self.updateGraph, linesLayer,
             dem, side_distance, interpolate_act
         )
-        self.iface.mapCanvas().setMapTool(st)
+        self.iface.mapCanvas().setMapTool(self.PisteCreatorTool)
 
     def slopeCalc(self):
         """Activate the edit tool"""
@@ -414,13 +415,13 @@ class PisteCreator:
         )
 
         # 4 Activate Maptools
-        ct = SlopeMapTool(
+        self.PisteCreatorTool = SlopeMapTool(
             self.iface,  self.displayXY, linesLayer, dem, side_distance,
             tolerated_a_slope, tolerated_c_slope, max_length, swath_distance,
             max_length_hold, swath_display, interpolate_act, t_color,f_color,
             tl_color, fl_color, b_color, a_color
         )
-        self.iface.mapCanvas().setMapTool(ct)
+        self.iface.mapCanvas().setMapTool(self.PisteCreatorTool)
 
     def updateGraph(self, geom, a_slope, c_l_slope, c_r_slope):
         """Update the track graph, use as a callback function \

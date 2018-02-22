@@ -70,6 +70,7 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
         self.ConfigParser = None
         self.initPars()
         self.graph_widget = graph_widget
+        self.PisteCreatorTool = plugin.PisteCreatorTool
         self.canvas = canvas
         self.plugin = plugin
         self.saveButton.clicked.connect(self.saveconfig)
@@ -80,72 +81,91 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
         configFilePath = os.path.join(
             os.path.abspath(os.path.dirname(__file__)), 'option.cfg')
         self.ConfigParser.read(configFilePath)
-        self.sideDistSpinBox.setValue(
-            self.ConfigParser.getint(
-                'calculation_variable', 'side_distance'
-            )
-        )
-        self.toleratedASlopeSpinBox.setValue(
-            self.ConfigParser.getint(
-                'graphical_visualisation', 'tolerated_a_slope'
-                )
-        )
-        self.toleratedCSlopeSpinBox.setValue(
-            self.ConfigParser.getint(
-                'graphical_visualisation', 'tolerated_c_slope'
-            )
-        )
-        self.maxLengthSpinBox.setValue(
-            self.ConfigParser.getint(
-                'graphical_visualisation', 'max_length'
-            )
-        )
-        self.maxLengthCheckBox.setChecked(
-            self.ConfigParser.getboolean(
-                'graphical_visualisation', 'max_length_hold'
-            )
-        )
-        self.swathDistSpinBox.setValue(
-            self.ConfigParser.getint(
-                'graphical_visualisation', 'swath_distance'
-            )
-        )
-        self.swathDistCheckBox.setChecked(
-            self.ConfigParser.getboolean(
-                'graphical_visualisation', 'swath_display'
-            )
-        )
-        self.interpolCheckBox.setChecked(
-            self.ConfigParser.getboolean(
-                'calculation_variable', 'interpolate_act'
-            )
-        )
-        t_color = QColor(self.ConfigParser.get(
+
+        self.sideDistInt = self.ConfigParser.getint('calculation_variable', 'side_distance')
+        self.sideDistSpinBox.setValue(self.sideDistInt)
+
+        self.aslopeInt = self.ConfigParser.getint('graphical_visualisation', 'tolerated_a_slope')
+        self.toleratedASlopeSpinBox.setValue(self.aslopeInt)
+
+        self.cslopeInt = self.ConfigParser.getint('graphical_visualisation', 'tolerated_c_slope')
+        self.toleratedCSlopeSpinBox.setValue(self.cslopeInt)
+
+        self.lengthInt = self.ConfigParser.getint('graphical_visualisation', 'max_length')
+        self.maxLengthSpinBox.setValue(self.lengthInt)
+
+        self.lengthBool = self.ConfigParser.getboolean('graphical_visualisation', 'max_length_hold')
+        self.maxLengthCheckBox.setChecked(self.lengthBool)
+
+        self.swathInt = self.ConfigParser.getint('graphical_visualisation', 'swath_distance')
+        self.swathDistSpinBox.setValue(self.swathInt)
+
+        self.swathBool = self.ConfigParser.getboolean('graphical_visualisation', 'swath_display')
+        self.swathDistCheckBox.setChecked(self.swathBool)
+        
+        self.interpolBool = self.ConfigParser.getboolean('calculation_variable', 'interpolate_act')
+        self.interpolCheckBox.setChecked(self.interpolBool)
+
+        self.t_color = QColor(self.ConfigParser.get(
                 'graphical_visualisation', 't_color'
             ))
-        f_color = QColor(self.ConfigParser.get(
+        self.f_color = QColor(self.ConfigParser.get(
                 'graphical_visualisation', 'f_color'
             ))
-        tl_color = QColor(self.ConfigParser.get(
+        self.tl_color = QColor(self.ConfigParser.get(
                 'graphical_visualisation', 'tl_color'
             ))
-        fl_color = QColor(self.ConfigParser.get(
+        self.fl_color = QColor(self.ConfigParser.get(
                 'graphical_visualisation', 'fl_color'
             ))
-        b_color = QColor(self.ConfigParser.get(
+        self.b_color = QColor(self.ConfigParser.get(
                 'graphical_visualisation', 'b_color'
             ))
-        a_color = QColor(self.ConfigParser.get(
+        self.a_color = QColor(self.ConfigParser.get(
                 'graphical_visualisation', 'a_color'
             ))
-        self.T_ColorButton.setColor(t_color)
-        self.F_ColorButton.setColor(f_color)
-        self.TL_ColorButton.setColor(tl_color)
-        self.FL_ColorButton.setColor(fl_color)
-        self.B_ColorButton.setColor(b_color)
-        self.A_ColorButton.setColor(a_color)
+        self.T_ColorButton.setColor(self.t_color)
+        self.F_ColorButton.setColor(self.f_color)
+        self.TL_ColorButton.setColor(self.tl_color)
+        self.FL_ColorButton.setColor(self.fl_color)
+        self.B_ColorButton.setColor(self.b_color)
+        self.A_ColorButton.setColor(self.a_color)
+
+    # def checkChanges(self):
+    #     if self.sideDistSpinBox.value() != self.sideDistInt:
+    #         emit()
+    #     elif self.toleratedASlopeSpinBox.value() != self.aslopeInt:
+    #         emit()
+    #     elif self.self.toleratedCSlopeSpinBox.value() != self.cslopeInt:
+    #         emit()
+    #     elif self.maxLengthSpinBox.value() != self.lengthInt:
+    #         emit()
+    #     elif self.maxLengthCheckBox.isChecked() != self.lengthBool:
+    #         emit()
+    #     elif self.swathDistSpinBox.value() != self.swathInt:
+    #         emit()
+    #     elif self.swathDistCheckBox.isChecked() != self.swathBool:
+    #         emit()
+    #     elif self.interpolCheckBox.isChecked() != self.interpolBool:
+    #         emit()
 
     def saveconfig(self):
+        # self.checkChanges()
+        self.sideDistInt = self.sideDistSpinBox.value()
+        self.aslopeInt = self.toleratedASlopeSpinBox.value()
+        self.cslopeInt = self.toleratedCSlopeSpinBox.value()
+        self.lengthInt = self.maxLengthSpinBox.value()
+        self.lengthBool  = self.maxLengthCheckBox.isChecked()
+        self.swathInt = self.swathDistSpinBox.value()
+        self.swathBool = self.swathDistCheckBox.isChecked()
+        self.interpolBool = self.interpolCheckBox.isChecked()
+        self.t_color = self.T_ColorButton.color().name()
+        self.f_color = self.F_ColorButton.color().name()
+        self.tl_color = self.TL_ColorButton.color().name()
+        self.fl_color= self.FL_ColorButton.color().name()
+        self.a_color = self.A_ColorButton.color().name()
+        self.b_color = self.B_ColorButton.color().name()
+
         self.ConfigParser.set(
             'calculation_variable',
             'side_distance',
@@ -159,6 +179,7 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
         self.ConfigParser.set(
             'graphical_visualisation',
             'tolerated_c_slope',
+            
             self.toleratedCSlopeSpinBox.value()
         )
         self.ConfigParser.set(
@@ -228,7 +249,11 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
         self.graph_widget.plot([], [], [], [])
         try:
             if self.canvas.mapTool().map_tool_name == 'SlopeMapTool':
-                self.plugin.slopeCalc()
+                self.plugin.PisteCreatorTool.configChange(
+                    self.sideDistInt,self.aslopeInt,self.cslopeInt,self.lengthInt,
+                    self.lengthBool,self.swathInt,self.swathBool,self.interpolBool,
+                    self.t_color,self.f_color,self.tl_color,self.fl_color,
+                    self.b_color,self.a_color)
         except AttributeError:
             pass
         self.close()

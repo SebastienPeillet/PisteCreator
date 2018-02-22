@@ -124,6 +124,43 @@ class SlopeMapTool(QgsMapTool):
             if state != None :
                 self.helpToNext(self.line_geom[-2],self.line_geom[-1],self.assisted_track)
 
+    def configChange(
+        self,sideDistInt,aslopeInt,cslopeInt,lengthInt,
+        lengthBool,swathInt,swathBool,interpolBool,
+        t_color,f_color,tl_color,fl_color,
+        b_color,a_color
+    ):
+        self.side_distance = sideDistInt
+        self.max_length = lengthInt
+        self.max_length_hold = lengthBool
+
+
+        self.tolerated_a_slope = aslopeInt
+        self.tolerated_c_slope = cslopeInt
+        
+        self.interpolate_act = interpolBool
+        if self.swath_display != swathBool or self.swath_distance != swathInt :
+            if self.swath_display == False:
+                self.rub_rect = None
+                self.rub_rect_anchor = None
+                self.rub_rect_anchors = None
+                self.rub_buff_cursor = None
+            elif self.swath_display == True or self.swath_distance != swathInt :
+                self.swath_display = swathBool
+                self.rub_rect = self.rubRectInit()
+                self.rub_rect_anchor = self.rubAnchorInit()
+                self.rub_rect_anchors = self.rubAnchorsInit()
+                self.rub_buff_cursor = self.rubBuffCursorInit()
+                self.rubDisplayUp()
+
+        self.t_color = QColor(t_color)
+        self.f_color = QColor(f_color)
+        self.tl_color = QColor(tl_color)
+        self.fl_color = QColor(fl_color)
+        self.b_color = QColor(b_color)
+        self.a_color = QColor(a_color)
+
+
     # Event when user doubleclicks with the mouse
     def canvasDoubleClickEvent(self, e):
         """A double click ends the track edition."""
