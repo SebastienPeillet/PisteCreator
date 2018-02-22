@@ -428,6 +428,8 @@ class SlopeMapTool(QgsMapTool):
             dist = self.max_length
         azimuth = sP.azimuth(eP)
 
+        print method
+
         if method == 'e' :
             if self.aslope_list[-1] > 0:
                 wanted_a_slope = self.tolerated_a_slope
@@ -525,6 +527,101 @@ class SlopeMapTool(QgsMapTool):
                     self.rub_helpline.addGeometry(
                         QgsGeometry.fromPolyline(points), None
                     )
+
+        elif method == 'c' :
+            if self.aslope_list[-1] > 0:
+                wanted_a_slope = self.tolerated_a_slope
+            else:
+                wanted_a_slope = -self.tolerated_a_slope
+
+            diff = None
+            best = 100
+            xp, yp = eP
+            az = math.radians(azimuth)
+            cosa = math.sin(az)
+            cosb = math.cos(az)
+
+            next_point = QgsPoint(xp+(dist*cosa), yp+(dist*cosb))
+            a_slope, c_left_slope, c_right_slope, _ = self.slopeCalc(eP, next_point)
+            c_slope = max(math.fabs(c_left_slope),math.fabs(c_right_slope))
+            print c_slope
+            if math.fabs(a_slope) < math.fabs(wanted_a_slope) and c_slope < self.tolerated_c_slope:
+                if c_slope < best:
+                    best = c_slope
+
+            if best < 0.03:
+                self.next_point = next_point
+                points = [eP, next_point]
+                self.rub_helpline.addGeometry(
+                    QgsGeometry.fromPolyline(points), None
+                )
+            else:
+                alpha_b = None
+                for alpha in range(10, 610, 5):
+                    alpha = alpha / 10
+                    az1 = math.radians(azimuth-alpha)
+                    cosa1 = math.sin(az1)
+                    cosb1 = math.cos(az1)
+                    az2 = math.radians(azimuth+alpha)
+                    cosa2 = math.sin(az2)
+                    cosb2 = math.cos(az2)
+
+                    next_point1 = QgsPoint(xp+(dist*cosa1), yp+(dist*cosb1))
+                    a_slope1, c_left_slope1, c_right_slope1, _ = self.slopeCalc(eP, next_point1)
+                    c_slope1 = max(math.fabs(c_left_slope1),math.fabs(c_right_slope1))
+                    next_point2 = QgsPoint(xp+(dist*cosa2), yp+(dist*cosb2))
+                    a_slope2, c_left_slope2, c_right_slope2, _ = self.slopeCalc(eP, next_point2)
+                    c_slope2 = max(math.fabs(c_left_slope2),math.fabs(c_right_slope2))
+
+                    if math.fabs(a_slope1) < math.fabs(wanted_a_slope) and c_slope1 < self.tolerated_c_slope:
+                        if c_slope1 < best:
+                            best = c_slope1
+                            alpha_b = -alpha
+                            if best < 0.03:
+                                print best
+                                self.next_point = next_point1
+                                points = [eP, next_point1]
+                                self.rub_helpline.reset()
+                                self.rub_helpline.addGeometry(
+                                    QgsGeometry.fromPolyline(points), None
+                                )
+                                break
+                    if math.fabs(a_slope2) < math.fabs(wanted_a_slope) and c_slope2 < self.tolerated_c_slope:
+                        if c_slope2 < best:
+                            best = c_slope2
+                            alpha_b = alpha
+                            if best < 0.03:
+                                self.next_point = next_point2
+                                print best
+                                points = [eP, next_point2]
+                                self.rub_helpline.reset()
+                                self.rub_helpline.addGeometry(
+                                    QgsGeometry.fromPolyline(points), None
+                                )
+                                break
+
+                if alpha_b is not None:
+                    az = math.radians(azimuth+alpha_b)
+                    print best
+                    cosa = math.sin(az)
+                    cosb = math.cos(az)
+                    next_point = QgsPoint(
+                        xp+(dist*cosa), yp+(dist*cosb)
+                    )
+                    self.next_point = next_point
+                    points = [eP, next_point]
+                    self.rub_helpline.reset()
+                    self.rub_helpline.addGeometry(
+                        QgsGeometry.fromPolyline(points), None
+                    )
+                elif best != 100:
+                    print best
+                    self.next_point = next_point
+                    points = [eP, next_point]
+                    self.rub_helpline.addGeometry(
+                        QgsGeometry.fromPolyline(points), None
+                    )
+            pass
 
     def helpConstruct(self):
         previousPoint = self.point1coord
