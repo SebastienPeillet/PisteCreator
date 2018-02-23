@@ -139,26 +139,71 @@ class SlopeMapTool(QgsMapTool):
         self.tolerated_c_slope = cslopeInt
         
         self.interpolate_act = interpolBool
-        if self.swath_display != swathBool or self.swath_distance != swathInt :
-            if self.swath_display == False:
-                self.rub_rect = None
-                self.rub_rect_anchor = None
-                self.rub_rect_anchors = None
-                self.rub_buff_cursor = None
-            elif self.swath_display == True or self.swath_distance != swathInt :
-                self.swath_display = swathBool
-                self.rub_rect = self.rubRectInit()
-                self.rub_rect_anchor = self.rubAnchorInit()
-                self.rub_rect_anchors = self.rubAnchorsInit()
-                self.rub_buff_cursor = self.rubBuffCursorInit()
-                self.rubDisplayUp()
-
         self.t_color = QColor(t_color)
         self.f_color = QColor(f_color)
         self.tl_color = QColor(tl_color)
         self.fl_color = QColor(fl_color)
-        self.b_color = QColor(b_color)
+        
         self.a_color = QColor(a_color)
+        if self.swath_display != swathBool or self.swath_distance != swathInt or self.b_color != QColor(b_color):
+            if swathBool == False:
+                self.swath_display = swathBool
+                self.rub_rect.reset()
+                self.rub_rect_anchor.reset()
+                self.rub_rect_anchors.reset()
+                self.rub_buff_cursor.reset()
+                self.rub_rect = None
+                self.rub_rect_anchor = None
+                self.rub_rect_anchors = None
+                self.rub_buff_cursor = None
+            elif swathBool == True or self.swath_distance != swathInt :
+                self.b_color = QColor(b_color)
+                if self.swath_display == False :
+                    self.swath_distance = swathInt
+                    self.swath_display = swathBool
+                    self.rub_rect = self.rubRectInit()
+                    self.rub_rect_anchor = self.rubAnchorInit()
+                    self.rub_rect_anchor.addGeometry(
+                        QgsGeometry.fromPolyline(self.line_geom)
+                        .buffer(self.swath_distance, 20), None)
+                    if self.edit == True :
+                        pr = self.lines_layer.dataProvider()
+                        ids = [i.id() for i in self.lines_layer.getFeatures()]
+                        id = ids[-1]
+                        iterator = self.lines_layer.getFeatures(
+                            QgsFeatureRequest().setFilterFid(id))
+                        ft = next(iterator)
+                        self.rub_rect_anchors = self.rubAnchorsInit(ft.id())
+                    else :
+                        self.rub_rect_anchors = self.rubAnchorsInit()
+                    self.rub_buff_cursor = self.rubBuffCursorInit()
+                    if self.edit == True :
+                        self.rubDisplayUp()
+                else :
+                    self.swath_distance = swathInt
+                    self.swath_display = swathBool
+                    self.rub_rect.reset()
+                    self.rub_rect_anchor.reset()
+                    self.rub_rect_anchors.reset()
+                    self.rub_buff_cursor.reset()
+                    self.rub_rect = self.rubRectInit()
+                    self.rub_rect_anchor = self.rubAnchorInit()
+                    self.rub_rect_anchor.addGeometry(
+                        QgsGeometry.fromPolyline(self.line_geom)
+                        .buffer(self.swath_distance, 20), None)
+                    if self.edit == True :
+                        pr = self.lines_layer.dataProvider()
+                        ids = [i.id() for i in self.lines_layer.getFeatures()]
+                        id = ids[-1]
+                        iterator = self.lines_layer.getFeatures(
+                            QgsFeatureRequest().setFilterFid(id))
+                        ft = next(iterator)
+                        self.rub_rect_anchors = self.rubAnchorsInit(ft.id())
+                    else :
+                        self.rub_rect_anchors = self.rubAnchorsInit()
+                    self.rub_buff_cursor = self.rubBuffCursorInit()
+                    if self.edit == True :
+                        self.rubDisplayUp()
 
 
     # Event when user doubleclicks with the mouse
@@ -855,17 +900,18 @@ class SlopeMapTool(QgsMapTool):
             self.rub_rect_anchor.reset()
 
     # RUBBERBANDS FUNCTIONS
-    def rubAnchorsInit(self):
+    def rubAnchorsInit(self, id_avoid=None):
         """Load buffer rubberband from line during maptool activation"""
         rubber = QgsRubberBand(self.canvas, True)
 
         tracks_layer = self.lines_layer
         for track in tracks_layer.getFeatures():
-            geom = track.geometry().asPolyline()
-            if geom != 0:
-                rubber.addGeometry(
-                    QgsGeometry.fromPolyline(geom)
-                    .buffer(self.swath_distance, 20), None)
+            if id_avoid != track.id() :
+                geom = track.geometry().asPolyline()
+                if geom != 0:
+                    rubber.addGeometry(
+                        QgsGeometry.fromPolyline(geom)
+                        .buffer(self.swath_distance, 20), None)
         rubber.setColor(self.b_color)
         rubber.setWidth(2)
         return rubber
