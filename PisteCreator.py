@@ -418,7 +418,7 @@ class PisteCreator:
         self.PisteCreatorTool = SlopeMapTool(
             self.iface,  self.displayXY, linesLayer, dem, side_distance,
             tolerated_a_slope, tolerated_c_slope, max_length, swath_distance,
-            max_length_hold, swath_display, interpolate_act, t_color,f_color,
+            max_length_hold, swath_display, interpolate_act, t_color, f_color,
             tl_color, fl_color, b_color, a_color
         )
         self.iface.mapCanvas().setMapTool(self.PisteCreatorTool)
