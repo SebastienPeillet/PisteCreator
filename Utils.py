@@ -935,12 +935,9 @@ class SlopeMapTool(QgsMapTool):
         """Parameter for the help segment rubberband during segment construction"""
         rubber = QgsRubberBand(self.canvas, True)
         rubber.setColor(self.a_color)
-        r=self.a_color.red()
-        g=self.a_color.green()
-        b=self.a_color.blue()
         rubber.setFillColor(self.a_color)
         # rubber.setFillColor(QColor(r,g,b))
-        rubber.setWidth(2)
+        rubber.setWidth(1)
         return rubber
 
     def rubPolylineInit(self):
