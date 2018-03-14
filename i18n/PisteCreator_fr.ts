@@ -79,9 +79,32 @@
         <translation>Couleur du buffer :</translation>
     </message>
     <message>
-        <location filename="../Option_dock.ui" line="504"/>
-        <source>Assisted_track :</source>
+        <location filename="../Option_dock.ui" line="498"/>
+        <source>Assisted track :</source>
         <translation>Tracé assisté</translation>
+    </message>
+</context>
+<context>
+    <name>Form</name>
+    <message>
+        <location filename="../assisted_track_option.ui" line="26"/>
+        <source>Assisted Track Option</source>
+        <translation>Option de tracé assisté</translation>
+    </message>
+    <message>
+        <location filename="../assisted_track_option.ui" line="38"/>
+        <source>Truck track</source>
+        <translation>Echappement</translation>
+    </message>
+    <message>
+        <location filename="../assisted_track_option.ui" line="54"/>
+        <source>Skidding track</source>
+        <translation>Cloisonnement</translation>
+    </message>
+    <message utf8="true">
+        <location filename="../assisted_track_option.ui" line="70"/>
+        <source>Inactive</source>
+        <translation>Désactivé</translation>
     </message>
 </context>
 <context>
@@ -141,7 +164,7 @@
     <message>
         <location filename="../PisteCreator_dockwidget_base.ui" line="101"/>
         <source>Length :</source>
-        <translation>Longueur</translation>
+        <translation>Longueur :</translation>
     </message>
     <message>
         <location filename="../PisteCreator_dockwidget_base.ui" line="111"/>

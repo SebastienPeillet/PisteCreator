@@ -35,7 +35,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Echappement</string>
+    <string>Truck track</string>
    </property>
    <attribute name="buttonGroup">
     <string notr="true">AOptGroup</string>
@@ -51,7 +51,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Cloisonnement</string>
+    <string>Skidding track</string>
    </property>
    <attribute name="buttonGroup">
     <string notr="true">AOptGroup</string>
@@ -67,7 +67,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Désactivé</string>
+    <string>Inactive</string>
    </property>
    <attribute name="buttonGroup">
     <string notr="true">AOptGroup</string>
