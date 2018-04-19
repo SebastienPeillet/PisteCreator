@@ -1,4 +1,4 @@
-# PisteCreator
+# PisteCreator <img src="http://open.geoexmachina.fr/img/article/PC_icon.png"></img>
 ## ONF GUI plugins to create tracks
 
 In French Guyana forest, it's not easy to lead engines deep into the wood. The rainy season challenges the earthworks and the tracks degrades, due to the water runoff on inclined tracks. Field operator have to plane the road access for every step in lumbering (cutting, skidding, on-site processing and trees loading onto trucks). During last decades, forestry operators tried to improve their technics to cause less environmental impact and to conform to ecolabel requirements.
