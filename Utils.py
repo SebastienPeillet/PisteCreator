@@ -382,7 +382,10 @@ class SlopeMapTool(QgsMapTool):
             valueToCheck1 = self.dem.dataProvider().identify(previousPoint,QgsRaster.IdentifyFormatValue).results()[1]
         else :
             valueToCheck1 = None
-        valueToCheck2 = self.dem.dataProvider().identify(point,QgsRaster.IdentifyFormatValue).results()[1]
+        if point is not None :
+            valueToCheck2 = self.dem.dataProvider().identify(point,QgsRaster.IdentifyFormatValue).results()[1]
+        else :
+            valueToCheck2 = None
         # Left click
         if e.button() == 1:
             if previousPoint != self.point2coord:
@@ -518,10 +521,10 @@ class SlopeMapTool(QgsMapTool):
         if self.edit is True:
             pr = self.lines_layer.dataProvider()
             ids = [i.id() for i in self.lines_layer.getFeatures()]
+            print len(ids)
             if len(ids) != 0 :
                 id = ids[-1]
-                iterator = self.lines_layer.getFeatures(
-                    QgsFeatureRequest().setFilterFid(id))
+                iterator = self.lines_layer.getFeatures(QgsFeatureRequest().setFilterFid(id))
                 ft = next(iterator)
                 geom = ft.geometry().asPolyline()
                 if self.swath_display is True:
