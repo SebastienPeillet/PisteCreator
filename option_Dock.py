@@ -246,7 +246,7 @@ class OptionDock(QtGui.QDockWidget, FORM_CLASS):
         ) as configfile:
             self.ConfigParser.write(configfile)
         self.graph_widget.initPars()
-        self.graph_widget.plot([], [], [], [])
+        self.graph_widget.plot([], [], [], [], 'c')
         try:
             if self.canvas.mapTool().map_tool_name == 'SlopeMapTool':
                 self.plugin.PisteCreatorTool.configChange(

@@ -36,6 +36,7 @@ import resources
 # Import the code for the DockWidget
 from PisteCreator_dockwidget import PisteCreatorDockWidget
 from option_Dock import OptionDock
+from option_Dock_echap_mode import OptionDockEchap
 from slope_graph import SlopeGraphicsView
 
 import os.path
@@ -200,13 +201,16 @@ class PisteCreator:
         self.dockwidget.EditButton.clicked.connect(self.slopeCalc)
         self.dockwidget.selectButton.clicked.connect(self.selectFeat)
         self.dockwidget.OptionButton.clicked.connect(self.openOption)
-
+        self.dockwidget.desacButton.setChecked(True)
+        self.dockwidget.desacButton.clicked.connect(lambda: self.changeAssistedMode('c'))
+        self.dockwidget.cloisButton.clicked.connect(lambda: self.changeAssistedMode('c'))
+        self.dockwidget.echapButton.clicked.connect(lambda: self.changeAssistedMode('e'))
+        self.canvas.mapToolSet.connect(self.cleanStop)
     # --------------------------------------------------------------------------
-
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
 
-        # print "** CLOSING PisteCreator"
+        print "** CLOSING PisteCreator"
 
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
@@ -236,6 +240,16 @@ class PisteCreator:
 
     # --------------------------------------------------------------------------
     # PisteCreator function
+    def changeAssistedMode(self,mode):
+        self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
+        self.graph_widget.plot([],[],[],[],mode)
+
+    def cleanStop(self):
+        if self.canvas.mapTool() != None :
+            if self.PisteCreatorTool != None and self.canvas.mapTool().toolName() != 'SlopeMapTool':
+                self.PisteCreatorTool.deactivate()
+                self.PisteCreatorTool == None
+
     def displayXY(
         self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw
     ):
@@ -289,9 +303,15 @@ class PisteCreator:
 
     def openOption(self):
         """Open the options box"""
-
-        self.optionDock = OptionDock(self, self.graph_widget, self.canvas)
-        self.optionDock.show()
+        if self.dockwidget.echapButton.isChecked() == True :
+            self.optionDock = OptionDockEchap(self, self.graph_widget, self.canvas)
+            self.optionDock.show()
+        elif self.dockwidget.cloisButton.isChecked() == True :
+            self.optionDock = OptionDock(self, self.graph_widget, self.canvas)
+            self.optionDock.show()
+        elif self.dockwidget.desacButton.isChecked() == True :
+            self.optionDock = OptionDock(self, self.graph_widget, self.canvas)
+            self.optionDock.show()
         return None
 
     def selectFeat(self):
@@ -413,13 +433,18 @@ class PisteCreator:
         a_color = self.ConfigParser.get(
             'graphical_visualisation', 'a_color'
         )
-
+        if self.dockwidget.echapButton.isChecked() == True :
+            assisted_mode = 'e'
+        elif self.dockwidget.cloisButton.isChecked() == True :
+            assisted_mode = 'c'
+        elif self.dockwidget.desacButton.isChecked() == True :
+            assisted_mode = None
         # 4 Activate Maptools
         self.PisteCreatorTool = SlopeMapTool(
             self.iface,  self.displayXY, linesLayer, dem, side_distance,
             tolerated_a_slope, tolerated_c_slope, max_length, swath_distance,
             max_length_hold, swath_display, interpolate_act, t_color, f_color,
-            tl_color, fl_color, b_color, a_color
+            tl_color, fl_color, b_color, a_color, assisted_mode
         )
         self.iface.mapCanvas().setMapTool(self.PisteCreatorTool)
 
@@ -440,7 +465,13 @@ class PisteCreator:
                     length_list.append(length)
         else:
             del length_list[-1]
-        self.graph_widget.plot(length_list, a_slope, c_l_slope, c_r_slope)
+        if self.dockwidget.echapButton.isChecked() == True :
+            assisted_mode = 'e'
+        elif self.dockwidget.cloisButton.isChecked() == True :
+            assisted_mode = 'c'
+        elif self.dockwidget.desacButton.isChecked() == True :
+            assisted_mode = None
+        self.graph_widget.plot(length_list, a_slope, c_l_slope, c_r_slope, assisted_mode)
 
     # --------------------------------------------------------------------------
 

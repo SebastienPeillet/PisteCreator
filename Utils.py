@@ -26,7 +26,7 @@ from qgis.core import QgsGeometry, QgsPoint, QgsFeature, QgsRaster, \
     QgsFeatureRequest, QgsSnappingUtils, QgsExpression, QgsField
 from PyQt4.QtGui import QColor
 from PyQt4.QtCore import QVariant, Qt
-from assisted_track_option import AssistedTrackOption
+#from assisted_track_option import AssistedTrackOption
 import math
 import time
 
@@ -36,7 +36,7 @@ class SlopeMapTool(QgsMapTool):
         self, iface, callback, lines_layer, dem, side_distance,
         tolerated_a_slope, tolerated_c_slope, max_length, swath_distance,
         max_length_hold, swath_display, interpolate_act, t_color, f_color,
-        tl_color, fl_color, b_color, a_color
+        tl_color, fl_color, b_color, a_color, assisted_mode
     ):
         QgsMapTool.__init__(self, iface.mapCanvas())
         self.iface = iface
@@ -55,14 +55,17 @@ class SlopeMapTool(QgsMapTool):
         self.tolerated_c_slope = tolerated_c_slope
         self.swath_distance = swath_distance
         self.interpolate_act = interpolate_act
-        self.assisted_track = None
+        self.assisted_track = assisted_mode
 
         # Color variables
         self.t_color = QColor(t_color)
         self.f_color = QColor(f_color)
         self.tl_color = QColor(tl_color)
         self.fl_color = QColor(fl_color)
-        self.b_color = QColor(b_color)
+        if self.assisted_track != 'e' :
+            self.b_color = QColor(b_color)
+        else :
+            self.b_color = None
         self.a_color = QColor(a_color)
 
         # Chart variables
@@ -84,7 +87,10 @@ class SlopeMapTool(QgsMapTool):
         self.max_length_hold = max_length_hold
 
         # Rubber variables
-        self.swath_display = swath_display
+        if self.assisted_track != 'e' :
+            self.swath_display = swath_display
+        else :
+            self.swath_display = False
         if self.swath_display is True:
             self.rub_rect = self.rubRectInit()
             self.rub_rect_anchor = self.rubAnchorInit()
@@ -95,54 +101,54 @@ class SlopeMapTool(QgsMapTool):
         self.rub_helpline = self.rubHelpLineInit()
         self.rub_helppoly = self.rubHelpPolyInit()
 
-        self.assisted_track_option = AssistedTrackOption(self)
-        self.iface.addDockWidget(
-            Qt.TopDockWidgetArea, self.assisted_track_option
-        )
-        self.assisted_track_option.setFloating(True)
-        self.assisted_track_option.show()
-        self.assisted_track_option.keyPressed.connect(
-            lambda: self.keyPressEvent(self.assisted_track_option.key)
-        )
-        self.assisted_track_option.cloisButton.toggled.connect(
-            lambda: self.btnstate(self.assisted_track_option.cloisButton)
-        )
-        self.assisted_track_option.desacButton.toggled.connect(
-            lambda: self.btnstate(self.assisted_track_option.desacButton)
-        )
-        self.assisted_track_option.echapButton.toggled.connect(
-            lambda: self.btnstate(self.assisted_track_option.echapButton)
-        )
-        self.assisted_track_option.desacButton.setChecked(True)
+        # self.assisted_track_option = AssistedTrackOption(self)
+        # self.iface.addDockWidget(
+        #     Qt.TopDockWidgetArea, self.assisted_track_option
+        # )
+        # self.assisted_track_option.setFloating(True)
+        # self.assisted_track_option.show()
+        # self.assisted_track_option.keyPressed.connect(
+        #     lambda: self.keyPressEvent(self.assisted_track_option.key)
+        # )
+        # self.assisted_track_option.cloisButton.toggled.connect(
+        #     lambda: self.btnstate(self.assisted_track_option.cloisButton)
+        # )
+        # self.assisted_track_option.desacButton.toggled.connect(
+        #     lambda: self.btnstate(self.assisted_track_option.desacButton)
+        # )
+        # self.assisted_track_option.echapButton.toggled.connect(
+        #     lambda: self.btnstate(self.assisted_track_option.echapButton)
+        # )
+        # self.assisted_track_option.desacButton.setChecked(True)
 
         # Snap config
         self.snapper = self.snapperDef()
         return None
 
-    def btnstate(self, b):
-        p_state = self.assisted_track
-        state = None
-        if b.isChecked() is True:
-            state = b.text()
-            if state == "Cloisonnement":
-                self.assisted_track = 'c'
-            elif state == "Echappement":
-                self.assisted_track = 'e'
-            else:
-                self.assisted_track = None
-        if (
-            p_state != state
-            and self.edit is True
-            and len(self.line_geom) >= 2
-        ):
-            self.rub_helpline.reset()
-            self.rub_helppoly.reset(True)
-            if state is not None:
-                self.helpToNext(
-                    self.line_geom[-2],
-                    self.line_geom[-1],
-                    self.assisted_track
-                )
+    # def btnstate(self, b):
+    #     p_state = self.assisted_track
+    #     state = None
+    #     if b.isChecked() is True:
+    #         state = b.text()
+    #         if state in ["Cloisonnement","Skidding track"]:
+    #             self.assisted_track = 'c'
+    #         elif state in ["Echappement","Truck track"]:
+    #             self.assisted_track = 'e'
+    #         else:
+    #             self.assisted_track = None
+    #     if (
+    #         p_state != state
+    #         and self.edit is True
+    #         and len(self.line_geom) >= 2
+    #     ):
+    #         self.rub_helpline.reset()
+    #         self.rub_helppoly.reset(True)
+    #         if state is not None:
+    #             self.helpToNext(
+    #                 self.line_geom[-2],
+    #                 self.line_geom[-1],
+    #                 self.assisted_track
+    #             )
 
     def configChange(
         self, sideDistInt, aslopeInt, cslopeInt, lengthInt,
@@ -155,7 +161,8 @@ class SlopeMapTool(QgsMapTool):
         self.max_length_hold = lengthBool
 
         self.tolerated_a_slope = aslopeInt
-        self.tolerated_c_slope = cslopeInt
+        if self.assisted_track != 'e' :
+            self.tolerated_c_slope = cslopeInt
 
         self.interpolate_act = interpolBool
         self.t_color = QColor(t_color)
@@ -165,9 +172,10 @@ class SlopeMapTool(QgsMapTool):
 
         self.a_color = QColor(a_color)
         if (
-            self.swath_display != swathBool
+            (self.swath_display != swathBool
             or self.swath_distance != swathInt
-            or self.b_color != QColor(b_color)
+            or self.b_color != QColor(b_color))
+            and self.assisted_track != 'e'
         ):
             if swathBool is False:
                 self.swath_display = swathBool
@@ -325,22 +333,38 @@ class SlopeMapTool(QgsMapTool):
             and self.point1coord != self.point2coord
         ):
             if self.interpolate_act is True:
-                self.a_slope, self.c_left_slope, \
-                    self.c_right_slope, self.length = \
-                    self.slopeCalc(self.point1coord, self.point2coord)
-            else:
-                self.a_slope, self.c_left_slope, \
-                    self.c_right_slope, self.length = \
-                    self.slopeCalcWithoutInterpolate(
-                        self.point1coord,
-                        self.point2coord
+                try :
+                    self.a_slope, self.c_left_slope, \
+                        self.c_right_slope, self.length = \
+                        self.slopeCalc(self.point1coord, self.point2coord)
+                    self.callback(
+                        self.a_slope, self.c_left_slope, self.c_right_slope, self.length,
+                        self.line_geom, self.aslope_list, self.c_left_slope_list,
+                        self.c_right_slope_list, False
                     )
-        self.callback(
-            self.a_slope, self.c_left_slope, self.c_right_slope, self.length,
-            self.line_geom, self.aslope_list, self.c_left_slope_list,
-            self.c_right_slope_list, False
-        )
-
+                except TypeError :
+                    self.callback(
+                        '', '', '', '', self.line_geom, self.aslope_list,
+                        self.c_left_slope_list, self.c_right_slope_list, False
+                    )
+            else:
+                try :
+                    self.a_slope, self.c_left_slope, \
+                        self.c_right_slope, self.length = \
+                        self.slopeCalcWithoutInterpolate(
+                            self.point1coord,
+                            self.point2coord
+                        )
+                    self.callback(
+                        self.a_slope, self.c_left_slope, self.c_right_slope, self.length,
+                        self.line_geom, self.aslope_list, self.c_left_slope_list,
+                        self.c_right_slope_list, False
+                    )
+                except TypeError :
+                    self.callback(
+                        '', '', '', '', self.line_geom, self.aslope_list,
+                        self.c_left_slope_list, self.c_right_slope_list, False
+                    )
         if (
             self.point1coord is not None and self.point2coord is not None
             and self.point1coord != self.point2coord
@@ -354,12 +378,15 @@ class SlopeMapTool(QgsMapTool):
         A right click ends the track edition."""
         previousPoint = self.point1coord
         point = self.point2coord
-        self.point1coord = point
-
+        if previousPoint is not None :
+            valueToCheck1 = self.dem.dataProvider().identify(previousPoint,QgsRaster.IdentifyFormatValue).results()[1]
+        else :
+            valueToCheck1 = None
+        valueToCheck2 = self.dem.dataProvider().identify(point,QgsRaster.IdentifyFormatValue).results()[1]
         # Left click
         if e.button() == 1:
             if previousPoint != self.point2coord:
-                if self.edit is False:
+                if self.edit is False and valueToCheck2 is not None :
                     # First point on line
                     pt = QgsPoint(point)
                     pLine = [pt]
@@ -376,49 +403,52 @@ class SlopeMapTool(QgsMapTool):
 
                     self.edit = True
                     self.canvas.refresh()
+                    self.point1coord = point
 
                 else:
-                    # Add point
-                    pt = QgsPoint(point)
-                    ids = [i.id() for i in self.lines_layer.getFeatures()]
-                    id = ids[-1]
-                    iterator = self.lines_layer.getFeatures(
-                        QgsFeatureRequest().setFilterFid(id)
-                    )
-                    ft = next(iterator)
-                    geom = ft.geometry().asPolyline()
-                    # Add vertices
-                    geom.append(pt)
-                    self.line_geom = geom
-                    self.real_aslope_list.append(self.a_slope)
-                    self.aslope_list.append(math.fabs(self.a_slope))
-                    self.c_left_slope_list.append(math.fabs(self.c_left_slope))
-                    self.c_right_slope_list.append(
-                        math.fabs(self.c_right_slope))
-                    self.callback(
-                        self.a_slope, self.c_left_slope, self.c_right_slope,
-                        self.length, self.line_geom, self.aslope_list,
-                        self.c_left_slope_list, self.c_right_slope_list, True)
-                    pr = self.lines_layer.dataProvider()
-                    pr.changeGeometryValues(
-                        {ft.id(): QgsGeometry.fromPolyline(geom)})
-                    self.canvas.refresh()
-                    if self.swath_display is True:
-                        self.rub_rect_anchor.reset()
-                        self.rub_rect_anchor.addGeometry(
-                            QgsGeometry.fromPolyline(geom)
-                            .buffer(self.swath_distance, 20), None)
-                    if self.assisted_track is not None:
-                        self.helpToNext(
-                            previousPoint,
-                            point,
-                            self.assisted_track
+                    if valueToCheck1 is not None and valueToCheck2 is not None :
+                        # Add point
+                        pt = QgsPoint(point)
+                        ids = [i.id() for i in self.lines_layer.getFeatures()]
+                        id = ids[-1]
+                        iterator = self.lines_layer.getFeatures(
+                            QgsFeatureRequest().setFilterFid(id)
                         )
-                    if self.edit is False:
-                        self.reset()
+                        ft = next(iterator)
+                        geom = ft.geometry().asPolyline()
+                        # Add vertices
+                        geom.append(pt)
+                        self.line_geom = geom
+                        self.real_aslope_list.append(self.a_slope)
+                        self.aslope_list.append(math.fabs(self.a_slope))
+                        self.c_left_slope_list.append(math.fabs(self.c_left_slope))
+                        self.c_right_slope_list.append(
+                            math.fabs(self.c_right_slope))
+                        self.callback(
+                            self.a_slope, self.c_left_slope, self.c_right_slope,
+                            self.length, self.line_geom, self.aslope_list,
+                            self.c_left_slope_list, self.c_right_slope_list, True)
+                        pr = self.lines_layer.dataProvider()
+                        pr.changeGeometryValues(
+                            {ft.id(): QgsGeometry.fromPolyline(geom)})
+                        self.canvas.refresh()
+                        if self.swath_display is True:
+                            self.rub_rect_anchor.reset()
+                            self.rub_rect_anchor.addGeometry(
+                                QgsGeometry.fromPolyline(geom)
+                                .buffer(self.swath_distance, 20), None)
+                        if self.assisted_track is not None:
+                            self.helpToNext(
+                                previousPoint,
+                                point,
+                                self.assisted_track
+                            )
+                        if self.edit is False:
+                            self.reset()
+                        self.point1coord = point
         # Right click
         else:
-            if self.edit is True:
+            if self.edit is True and valueToCheck1 is not None and valueToCheck2 is not None:
                     pt = QgsPoint(point)
                     ids = [i.id() for i in self.lines_layer.getFeatures()]
                     id = ids[-1]
@@ -475,6 +505,7 @@ class SlopeMapTool(QgsMapTool):
                         ft.id(), index, value)
                     self.lines_layer.commitChanges()
                     self.lines_layer.startEditing()
+            self.point1coord = point
             self.reset()
             self.callback(
                 '', '', '', '', self.line_geom, self.aslope_list,
@@ -487,39 +518,40 @@ class SlopeMapTool(QgsMapTool):
         if self.edit is True:
             pr = self.lines_layer.dataProvider()
             ids = [i.id() for i in self.lines_layer.getFeatures()]
-            id = ids[-1]
-            iterator = self.lines_layer.getFeatures(
-                QgsFeatureRequest().setFilterFid(id))
-            ft = next(iterator)
-            geom = ft.geometry().asPolyline()
-            if self.swath_display is True:
-                self.rub_rect_anchors.addGeometry(
-                    QgsGeometry.fromPolyline(geom)
-                    .buffer(self.swath_distance, 20), None)
-            if pr.fieldNameIndex('id') == -1:
-                pr.addAttributes([QgsField('id', QVariant.Int, "int", 6)])
-                self.lines_layer.updateFields()
-            id_max = 0
-            for feat in self.lines_layer.getFeatures():
-                id = feat.attribute('id')
-                if id is not None:
-                    id_max = max(id_max, id)
-            new_id = int(id_max) + 1
-            index = self.lines_layer.fieldNameIndex("id")
-            self.lines_layer.changeAttributeValue(ft.id(), index, new_id)
-            self.lines_layer.commitChanges()
-            self.lines_layer.startEditing()
-            if pr.fieldNameIndex('length') == -1:
-                pr.addAttributes(
-                    [QgsField('length', QVariant.Double, "double", 6, 1)])
-                self.lines_layer.updateFields()
-            expression = QgsExpression("$length")
-            index = self.lines_layer.fieldNameIndex("length")
-            value = expression.evaluate(ft)
-            self.lines_layer.changeAttributeValue(ft.id(), index, value)
-            self.lines_layer.changeAttributeValue(ft.id(), index, value)
-            self.lines_layer.commitChanges()
-            self.lines_layer.startEditing()
+            if len(ids) != 0 :
+                id = ids[-1]
+                iterator = self.lines_layer.getFeatures(
+                    QgsFeatureRequest().setFilterFid(id))
+                ft = next(iterator)
+                geom = ft.geometry().asPolyline()
+                if self.swath_display is True:
+                    self.rub_rect_anchors.addGeometry(
+                        QgsGeometry.fromPolyline(geom)
+                        .buffer(self.swath_distance, 20), None)
+                if pr.fieldNameIndex('id') == -1:
+                    pr.addAttributes([QgsField('id', QVariant.Int, "int", 6)])
+                    self.lines_layer.updateFields()
+                id_max = 0
+                for feat in self.lines_layer.getFeatures():
+                    id = feat.attribute('id')
+                    if isinstance(feat.attribute('id'),long)==True :
+                        id_max = max(id_max, id)
+                new_id = int(id_max) + 1
+                index = self.lines_layer.fieldNameIndex("id")
+                self.lines_layer.changeAttributeValue(ft.id(), index, new_id)
+                self.lines_layer.commitChanges()
+                self.lines_layer.startEditing()
+                if pr.fieldNameIndex('length') == -1:
+                    pr.addAttributes(
+                        [QgsField('length', QVariant.Double, "double", 6, 1)])
+                    self.lines_layer.updateFields()
+                expression = QgsExpression("$length")
+                index = self.lines_layer.fieldNameIndex("length")
+                value = expression.evaluate(ft)
+                self.lines_layer.changeAttributeValue(ft.id(), index, value)
+                self.lines_layer.changeAttributeValue(ft.id(), index, value)
+                self.lines_layer.commitChanges()
+                self.lines_layer.startEditing()
 
         if self.swath_display is True:
             self.rub_rect.reset()
@@ -532,7 +564,7 @@ class SlopeMapTool(QgsMapTool):
         self.rub_helppoly.reset(True)
         self.lines_layer.updateFields()
         self.lines_layer.commitChanges()
-        self.assisted_track_option.close()
+        #self.assisted_track_option.close()
         self.callback(None, None, None, None, None, None, None, None, False)
 
     # Help to next point visualisation
@@ -935,30 +967,43 @@ class SlopeMapTool(QgsMapTool):
         x2, y2 = self.point2coord
         points = [QgsPoint(x1, y1), QgsPoint(x2, y2)]
         self.rub_polyline.addGeometry(QgsGeometry.fromPolyline(points), None)
-        if self.length < self.max_length:
-            if self.a_slope < self.tolerated_a_slope \
-                and self.a_slope > -(self.tolerated_a_slope) \
-                    and self.c_left_slope < self.tolerated_c_slope \
-                    and self.c_left_slope > -(self.tolerated_c_slope) \
-                    and self.c_right_slope < self.tolerated_c_slope \
-                    and self.c_right_slope > -(self.tolerated_c_slope):
-                self.rub_polyline.setColor(self.t_color)
+        if self.assisted_track != 'e' :
+            if self.length < self.max_length:
+                if self.a_slope < self.tolerated_a_slope \
+                    and self.a_slope > -(self.tolerated_a_slope) \
+                        and self.c_left_slope < self.tolerated_c_slope \
+                        and self.c_left_slope > -(self.tolerated_c_slope) \
+                        and self.c_right_slope < self.tolerated_c_slope \
+                        and self.c_right_slope > -(self.tolerated_c_slope):
+                    self.rub_polyline.setColor(self.t_color)
+                else:
+                    self.rub_polyline.setColor(self.f_color)
             else:
-                self.rub_polyline.setColor(self.f_color)
-        else:
-            if self.a_slope < self.tolerated_a_slope \
-                and self.a_slope > -(self.tolerated_a_slope) \
-                    and self.c_left_slope < self.tolerated_c_slope \
-                    and self.c_left_slope > -(self.tolerated_c_slope) \
-                    and self.c_right_slope < self.tolerated_c_slope \
-                    and self.c_right_slope > -(self.tolerated_c_slope):
-                self.rub_polyline.setColor(self.tl_color)
+                if self.a_slope < self.tolerated_a_slope \
+                    and self.a_slope > -(self.tolerated_a_slope) \
+                        and self.c_left_slope < self.tolerated_c_slope \
+                        and self.c_left_slope > -(self.tolerated_c_slope) \
+                        and self.c_right_slope < self.tolerated_c_slope \
+                        and self.c_right_slope > -(self.tolerated_c_slope):
+                    self.rub_polyline.setColor(self.tl_color)
+                else:
+                    self.rub_polyline.setColor(self.fl_color)
+
+            if self.swath_display is True:
+                self.rubDisplayUpRect(points)
+        else :
+            if self.length < self.max_length:
+                if self.a_slope < self.tolerated_a_slope \
+                    and self.a_slope > -(self.tolerated_a_slope):
+                    self.rub_polyline.setColor(self.t_color)
+                else:
+                    self.rub_polyline.setColor(self.f_color)
             else:
-                self.rub_polyline.setColor(self.fl_color)
-
-        if self.swath_display is True:
-            self.rubDisplayUpRect(points)
-
+                if self.a_slope < self.tolerated_a_slope \
+                    and self.a_slope > -(self.tolerated_a_slope):
+                    self.rub_polyline.setColor(self.tl_color)
+                else:
+                    self.rub_polyline.setColor(self.fl_color)
         return None
 
     def rubDisplayUpRect(self, points):
@@ -1225,6 +1270,9 @@ class SlopeMapTool(QgsMapTool):
         snapper.readConfigFromProject()
         snapper.setMapSettings(self.canvas.mapSettings())
         return snapper
+
+    def toolName(self):
+        return self.map_tool_name
 
     def zInterpolate(self, point):
         """Interpolate function (bilinear)"""
@@ -1791,6 +1839,9 @@ class SelectMapTool(QgsMapTool):
             c_right_slope = ''
 
         return a_slope, c_left_slope, c_right_slope, dist_seg
+
+    def toolName(self):
+        return self.map_tool_name
 
     def zInterpolate(self, point):
         """Interpolate function (bilinear)"""

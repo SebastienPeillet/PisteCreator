@@ -104,7 +104,7 @@ class SlopeGraphicsView(QtGui.QDialog):
         # refresh canvas
         self.canvas.draw()
 
-    def plot(self, x_list, y1_list, y2_list, y3_list):
+    def plot(self, x_list, y1_list, y2_list, y3_list, assisted_mode):
         # create an axis
         ax = self.figure.add_subplot(111)
 
@@ -130,12 +130,13 @@ class SlopeGraphicsView(QtGui.QDialog):
                 [self.tolerated_a_slope, self.tolerated_a_slope],
                 color='red')
             )
-        ax.add_line(
-            Line2D(
-                [0, xmax + 10],
-                [self.tolerated_c_slope, self.tolerated_c_slope],
-                color='green')
-            )
+        if assisted_mode != 'e' :
+            ax.add_line(
+                Line2D(
+                    [0, xmax + 10],
+                    [self.tolerated_c_slope, self.tolerated_c_slope],
+                    color='green')
+                )
         ax.set_xlabel('length')
         ax.set_ylabel('slope(%)')
         # refresh canvas
