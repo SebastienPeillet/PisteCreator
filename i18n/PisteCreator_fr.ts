@@ -101,7 +101,7 @@
         <source>Skidding track</source>
         <translation>Cloisonnement</translation>
     </message>
-    <message utf8="true">
+    <message>
         <location filename="../assisted_track_option.ui" line="70"/>
         <source>Inactive</source>
         <translation>Désactivé</translation>
@@ -126,53 +126,73 @@
         <translation>PisteCreator</translation>
     </message>
     <message>
-        <location filename="../PisteCreator_dockwidget_base.ui" line="36"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="128"/>
         <source>Right cross slope :</source>
         <translation>Pente latérale droite :</translation>
     </message>
     <message>
-        <location filename="../PisteCreator_dockwidget_base.ui" line="43"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="102"/>
         <source>Tracks Layer :</source>
         <translation>Couche de piste :</translation>
     </message>
     <message utf8="true">
-        <location filename="../PisteCreator_dockwidget_base.ui" line="56"/>
-        <location filename="../PisteCreator_dockwidget_base.ui" line="77"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="41"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="138"/>
         <source>↺</source>
         <translation>↺</translation>
     </message>
     <message>
-        <location filename="../PisteCreator_dockwidget_base.ui" line="63"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="79"/>
+        <source>Truck track</source>
+        <translation>Echappement</translation>
+    </message>
+    <message>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="89"/>
+        <source>Skidding track</source>
+        <translation>Cloisonnement</translation>
+    </message>
+    <message>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="121"/>
         <source>DEM Layer :</source>
         <translation>Couche MNT :</translation>
     </message>
     <message>
-        <location filename="../PisteCreator_dockwidget_base.ui" line="70"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="145"/>
+        <source>Assisted mode :</source>
+        <translation>Tracé assisté :</translation>
+    </message>
+    <message>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="152"/>
+        <source>Inactive</source>
+        <translation>Désactivé</translation>
+    </message>
+    <message>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="48"/>
         <source>Left cross slope :</source>
         <translation>Pente latérale gauche :</translation>
     </message>
     <message>
-        <location filename="../PisteCreator_dockwidget_base.ui" line="84"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="55"/>
         <source>Options</source>
         <translation>Options</translation>
     </message>
     <message>
-        <location filename="../PisteCreator_dockwidget_base.ui" line="94"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="34"/>
         <source>Along slope :</source>
         <translation>Pente en long :</translation>
     </message>
     <message>
-        <location filename="../PisteCreator_dockwidget_base.ui" line="101"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="62"/>
         <source>Length :</source>
         <translation>Longueur :</translation>
     </message>
     <message>
-        <location filename="../PisteCreator_dockwidget_base.ui" line="111"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="27"/>
         <source>Edit</source>
         <translation>Editer</translation>
     </message>
     <message>
-        <location filename="../PisteCreator_dockwidget_base.ui" line="118"/>
+        <location filename="../PisteCreator_dockwidget_base.ui" line="72"/>
         <source>Select</source>
         <translation>Sélectionner</translation>
     </message>
