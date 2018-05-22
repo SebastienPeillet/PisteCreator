@@ -206,7 +206,25 @@ class PisteCreator:
         self.dockwidget.cloisButton.clicked.connect(lambda: self.changeAssistedMode('c'))
         self.dockwidget.echapButton.clicked.connect(lambda: self.changeAssistedMode('e'))
         self.canvas.mapToolSet.connect(self.cleanStop)
+        self.canvas.layersChanged.connect(self.layersUpdate)
     # --------------------------------------------------------------------------
+    def layersUpdate(self):
+        track_text = self.dockwidget.TracksInput.currentText()
+        print track_text
+        dem_text = self.dockwidget.DEMInput.currentText()
+        print dem_text
+        self.listRastLayer()
+        self.listVectLayer()
+        track_ind = self.dockwidget.TracksInput.findText(track_text)
+        print track_ind
+        dem_ind = self.dockwidget.DEMInput.findText(dem_text)
+        print dem_ind
+        if track_ind != -1 :
+            self.dockwidget.TracksInput.setCurrentIndex(track_ind)
+        if dem_ind != -1 :
+            self.dockwidget.DEMInput.setCurrentIndex(dem_ind)
+        return None
+
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
 
