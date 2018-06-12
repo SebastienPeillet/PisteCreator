@@ -205,20 +205,16 @@ class PisteCreator:
         self.dockwidget.desacButton.clicked.connect(lambda: self.changeAssistedMode('c'))
         self.dockwidget.cloisButton.clicked.connect(lambda: self.changeAssistedMode('c'))
         self.dockwidget.echapButton.clicked.connect(lambda: self.changeAssistedMode('e'))
-        self.canvas.mapToolSet.connect(self.cleanStop)
+        #self.canvas.mapToolSet.connect(self.cleanStop)
         self.canvas.layersChanged.connect(self.layersUpdate)
     # --------------------------------------------------------------------------
     def layersUpdate(self):
         track_text = self.dockwidget.TracksInput.currentText()
-        print track_text
         dem_text = self.dockwidget.DEMInput.currentText()
-        print dem_text
         self.listRastLayer()
         self.listVectLayer()
         track_ind = self.dockwidget.TracksInput.findText(track_text)
-        print track_ind
         dem_ind = self.dockwidget.DEMInput.findText(dem_text)
-        print dem_ind
         if track_ind != -1 :
             self.dockwidget.TracksInput.setCurrentIndex(track_ind)
         if dem_ind != -1 :
@@ -231,6 +227,8 @@ class PisteCreator:
         print "** CLOSING PisteCreator"
 
         # disconnects
+        self.cleanStop()
+        self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
 
         # remove this statement if dockwidget is to remain
@@ -238,7 +236,6 @@ class PisteCreator:
         # Commented next statement since it causes QGIS crashe
         # when closing the docked window:
         # self.dockwidget = None
-        self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
         self.pluginIsActive = False
 
     def unload(self):
