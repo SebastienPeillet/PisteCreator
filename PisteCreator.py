@@ -26,7 +26,7 @@ from PyQt4.QtCore import QSettings, QTranslator, \
 from PyQt4.QtGui import QAction, QIcon, QFileDialog, \
     QGraphicsView, QGraphicsScene
 
-from qgis.gui import QgsMapToolZoom
+from qgis.gui import QgsMapToolZoom, QgsMapToolIdentify
 
 from qgis.core import QgsRasterLayer, QgsGeometry
 
@@ -205,7 +205,7 @@ class PisteCreator:
         self.dockwidget.desacButton.clicked.connect(lambda: self.changeAssistedMode('c'))
         self.dockwidget.cloisButton.clicked.connect(lambda: self.changeAssistedMode('c'))
         self.dockwidget.echapButton.clicked.connect(lambda: self.changeAssistedMode('e'))
-        #self.canvas.mapToolSet.connect(self.cleanStop)
+        self.canvas.mapToolSet.connect(self.cleanStop)
         self.canvas.layersChanged.connect(self.layersUpdate)
     # --------------------------------------------------------------------------
     def layersUpdate(self):
@@ -228,7 +228,6 @@ class PisteCreator:
 
         # disconnects
         self.cleanStop()
-        self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
 
         # remove this statement if dockwidget is to remain
@@ -237,6 +236,7 @@ class PisteCreator:
         # when closing the docked window:
         # self.dockwidget = None
         self.pluginIsActive = False
+        self.iface.actionPan().trigger()
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -260,11 +260,12 @@ class PisteCreator:
         self.graph_widget.plot([],[],[],[],mode)
 
     def cleanStop(self):
+        # print self.canvas.mapTool().toolName()
         if self.canvas.mapTool() != None :
             if self.PisteCreatorTool != None and self.canvas.mapTool().toolName() != 'SlopeMapTool':
                 self.PisteCreatorTool.deactivate()
-                self.PisteCreatorTool == None
-
+                self.PisteCreatorTool = None
+                self.iface.actionPan().trigger()
     def displayXY(
         self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw
     ):
