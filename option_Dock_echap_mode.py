@@ -88,11 +88,17 @@ class OptionDockEchap(QtGui.QDockWidget, FORM_CLASS):
         self.aslopeInt = self.ConfigParser.getint('graphical_visualisation', 'tolerated_a_slope')
         self.toleratedASlopeSpinBox.setValue(self.aslopeInt)
 
+        self.cslopeInt = self.ConfigParser.getint('graphical_visualisation', 'tolerated_c_slope')
+
         self.lengthInt = self.ConfigParser.getint('graphical_visualisation', 'max_length')
         self.maxLengthSpinBox.setValue(self.lengthInt)
 
         self.lengthBool = self.ConfigParser.getboolean('graphical_visualisation', 'max_length_hold')
         self.maxLengthCheckBox.setChecked(self.lengthBool)
+
+        self.swathInt = self.ConfigParser.getint('graphical_visualisation', 'swath_distance')
+
+        self.swathBool = self.ConfigParser.getboolean('graphical_visualisation', 'swath_display')
         
         self.interpolBool = self.ConfigParser.getboolean('calculation_variable', 'interpolate_act')
         self.interpolCheckBox.setChecked(self.interpolBool)
@@ -111,6 +117,9 @@ class OptionDockEchap(QtGui.QDockWidget, FORM_CLASS):
             ))
         self.a_color = QColor(self.ConfigParser.get(
                 'graphical_visualisation', 'a_color'
+            ))
+        self.b_color = QColor(self.ConfigParser.get(
+                'graphical_visualisation', 'b_color'
             ))
         self.T_ColorButton.setColor(self.t_color)
         self.F_ColorButton.setColor(self.f_color)
@@ -212,9 +221,10 @@ class OptionDockEchap(QtGui.QDockWidget, FORM_CLASS):
         try:
             if self.canvas.mapTool().map_tool_name == 'SlopeMapTool':
                 self.plugin.PisteCreatorTool.configChange(
-                    self.sideDistInt,self.aslopeInt,self.lengthInt,
-                    self.lengthBool,self.interpolBool,self.t_color,
-                    self.f_color,self.tl_color,self.fl_color,self.a_color)                    
+                    self.sideDistInt,self.aslopeInt,self.cslopeInt,self.lengthInt,
+                    self.lengthBool,self.swathInt,self.swathBool,self.interpolBool,
+                    self.t_color,self.f_color,self.tl_color,self.fl_color,
+                    self.b_color,self.a_color)                    
         except AttributeError:
             pass
         self.close()

@@ -262,10 +262,13 @@ class PisteCreator:
     def cleanStop(self):
         # print self.canvas.mapTool().toolName()
         if self.canvas.mapTool() != None :
-            if self.PisteCreatorTool != None and self.canvas.mapTool().toolName() != 'SlopeMapTool':
+            print self.canvas.mapTool().toolName()
+            if self.PisteCreatorTool != None and self.canvas.mapTool().toolName() != 'SlopeMapTool'and self.canvas.mapTool().toolName()!='SelectMapTool':
                 self.PisteCreatorTool.deactivate()
                 self.PisteCreatorTool = None
                 self.iface.actionPan().trigger()
+
+
     def displayXY(
         self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw
     ):
