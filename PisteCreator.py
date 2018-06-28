@@ -260,9 +260,7 @@ class PisteCreator:
         self.graph_widget.plot([],[],[],[],mode)
 
     def cleanStop(self):
-        # print self.canvas.mapTool().toolName()
         if self.canvas.mapTool() != None :
-            print self.canvas.mapTool().toolName()
             if self.PisteCreatorTool != None and self.canvas.mapTool().toolName() != 'SlopeMapTool'and self.canvas.mapTool().toolName()!='SelectMapTool':
                 self.PisteCreatorTool.deactivate()
                 self.PisteCreatorTool = None
