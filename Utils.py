@@ -928,7 +928,7 @@ class SlopeMapTool(QgsMapTool):
         for track in tracks_layer.getFeatures():
             if id_avoid != track.id():
                 geom = track.geometry().asPolyline()
-                if geom != 0:
+                if len(geom) > 1 :
                     rubber.addGeometry(
                         QgsGeometry.fromPolyline(geom)
                         .buffer(self.swath_distance, 20), None)
