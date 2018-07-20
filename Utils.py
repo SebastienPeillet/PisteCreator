@@ -927,11 +927,13 @@ class SlopeMapTool(QgsMapTool):
         tracks_layer = self.lines_layer
         for track in tracks_layer.getFeatures():
             if id_avoid != track.id():
-                geom = track.geometry().asPolyline()
-                if len(geom) > 1 :
-                    rubber.addGeometry(
-                        QgsGeometry.fromPolyline(geom)
-                        .buffer(self.swath_distance, 20), None)
+                geom = track.geometry()
+                if geom != None :
+                    geom= geom.asPolyline()
+                    if len(geom) > 1 :
+                        rubber.addGeometry(
+                            QgsGeometry.fromPolyline(geom)
+                            .buffer(self.swath_distance, 20), None)
         rubber.setColor(self.b_color)
         rubber.setWidth(2)
         return rubber
