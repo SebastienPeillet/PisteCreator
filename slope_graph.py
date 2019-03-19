@@ -25,6 +25,8 @@ import os
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal
+import matplotlib
+matplotlib.use('Qt4Agg')
 from matplotlib.backends.backend_qt4agg \
     import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
