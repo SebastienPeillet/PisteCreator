@@ -12,7 +12,7 @@ Qgis compatibility check :
 
 It add a new maptool that will help the user to keep reasonable declivity when he edits the tracks layers.
 
-This tool has been developped by ONF Guyane, based on the preliminary work of Guillaume Cornu, CIRAD 
+This tool has been developped by ONF Guyane, based/adapted on the preliminary work of Guillaume Cornu, CIRAD 
 
 ## Install
 
