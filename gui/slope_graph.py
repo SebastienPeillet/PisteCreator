@@ -21,42 +21,23 @@
  ***************************************************************************/
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import os
 
-from PyQt4 import QtGui, uic
-from PyQt4.QtCore import pyqtSignal
+from qgis.PyQt.QtWidgets import QDialog, QVBoxLayout
+from qgis.PyQt import uic
+from qgis.PyQt.QtCore import pyqtSignal, QSettings
 import matplotlib
-matplotlib.use('Qt4Agg')
+matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt4agg \
     import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-import ConfigParser
 
 
-class GrumpyConfigParser(ConfigParser.ConfigParser):
-    """Virtually identical to the original method, but delimit keys
-    and values with '=' instead of ' = '"""
-    def write(self, fp):
-        if self._defaults:
-            fp.write("[%s]\n" % DEFAULTSECT)
-            for (key, value) in self._defaults.items():
-                fp.write("%s = %s\n" % (key, str(value).replace('\n', '\n\t')))
-            fp.write("\n")
-        for section in self._sections:
-            fp.write("[%s]\n" % section)
-            for (key, value) in self._sections[section].items():
-                if key == "__name__":
-                    continue
-                if (value is not None) or (self._optcre == self.OPTCRE):
-
-                    key = "=".join((key, str(value).replace('\n', '\n\t')))
-
-                fp.write("%s\n" % (key))
-        fp.write("\n")
-
-
-class SlopeGraphicsView(QtGui.QDialog):
+class SlopeGraphicsView(QDialog):
 
     closingPlugin = pyqtSignal()
 
@@ -65,24 +46,20 @@ class SlopeGraphicsView(QtGui.QDialog):
         super(SlopeGraphicsView, self).__init__(parent)
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
-        layout = QtGui.QVBoxLayout()
+        layout = QVBoxLayout()
         layout.addWidget(self.canvas)
         self.setLayout(layout)
-        self.ConfigParser = None
+        self.settings = None
         self.tolerated_slope = None
         self.initPars()
         self.initplot()
 
     def initPars(self):
-        self.ConfigParser = GrumpyConfigParser()
-        self.ConfigParser.optionxform = str
-        configFilePath = os.path.join(
-            os.path.abspath(os.path.dirname(__file__)), 'option.cfg')
-        self.ConfigParser.read(configFilePath)
-        self.tolerated_a_slope = self.ConfigParser.getint(
-            'graphical_visualisation', 'tolerated_a_slope')
-        self.tolerated_c_slope = self.ConfigParser.getint(
-            'graphical_visualisation', 'tolerated_c_slope')
+        self.settings = QSettings()
+        self.tolerated_a_slope = int(self.settings.value(
+            'PisteCreator/graphical_visualisation/tolerated_a_slope', 10))
+        self.tolerated_c_slope = int(self.settings.value(
+            'PisteCreator/graphical_visualisation/tolerated_c_slope', 4))
 
     def initplot(self):
         ''' plot some random stuff '''
@@ -109,9 +86,6 @@ class SlopeGraphicsView(QtGui.QDialog):
     def plot(self, x_list, y1_list, y2_list, y3_list, assisted_mode):
         # create an axis
         ax = self.figure.add_subplot(111)
-
-        # discards the old graph
-        ax.hold(False)
 
         # plot data
         ax.plot(

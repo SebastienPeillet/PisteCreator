@@ -20,12 +20,11 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 from qgis.gui import QgsRubberBand, QgsMapToolIdentify, QgsMapTool
-from qgis.core import QgsGeometry, QgsPoint, QgsFeature, QgsRaster, \
-    QgsFeatureRequest, QgsSnappingUtils, QgsExpression, QgsField
-from PyQt4.QtGui import QColor
-from PyQt4.QtCore import QVariant, Qt
+from qgis.core import QgsGeometry, QgsPoint, QgsPointXY, QgsProject, QgsFeature, QgsRaster, \
+    QgsFeatureRequest, QgsSnappingUtils, QgsExpression, QgsField, QgsExpressionContext, QgsExpressionContextScope
+from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtCore import QVariant, Qt
 #from assisted_track_option import AssistedTrackOption
 import math
 import time
@@ -101,54 +100,9 @@ class SlopeMapTool(QgsMapTool):
         self.rub_helpline = self.rubHelpLineInit()
         self.rub_helppoly = self.rubHelpPolyInit()
 
-        # self.assisted_track_option = AssistedTrackOption(self)
-        # self.iface.addDockWidget(
-        #     Qt.TopDockWidgetArea, self.assisted_track_option
-        # )
-        # self.assisted_track_option.setFloating(True)
-        # self.assisted_track_option.show()
-        # self.assisted_track_option.keyPressed.connect(
-        #     lambda: self.keyPressEvent(self.assisted_track_option.key)
-        # )
-        # self.assisted_track_option.cloisButton.toggled.connect(
-        #     lambda: self.btnstate(self.assisted_track_option.cloisButton)
-        # )
-        # self.assisted_track_option.desacButton.toggled.connect(
-        #     lambda: self.btnstate(self.assisted_track_option.desacButton)
-        # )
-        # self.assisted_track_option.echapButton.toggled.connect(
-        #     lambda: self.btnstate(self.assisted_track_option.echapButton)
-        # )
-        # self.assisted_track_option.desacButton.setChecked(True)
-
         # Snap config
         self.snapper = self.snapperDef()
         return None
-
-    # def btnstate(self, b):
-    #     p_state = self.assisted_track
-    #     state = None
-    #     if b.isChecked() is True:
-    #         state = b.text()
-    #         if state in ["Cloisonnement","Skidding track"]:
-    #             self.assisted_track = 'c'
-    #         elif state in ["Echappement","Truck track"]:
-    #             self.assisted_track = 'e'
-    #         else:
-    #             self.assisted_track = None
-    #     if (
-    #         p_state != state
-    #         and self.edit is True
-    #         and len(self.line_geom) >= 2
-    #     ):
-    #         self.rub_helpline.reset()
-    #         self.rub_helppoly.reset(True)
-    #         if state is not None:
-    #             self.helpToNext(
-    #                 self.line_geom[-2],
-    #                 self.line_geom[-1],
-    #                 self.assisted_track
-    #             )
 
     def configChange(
         self, sideDistInt, aslopeInt, cslopeInt, lengthInt,
@@ -198,7 +152,7 @@ class SlopeMapTool(QgsMapTool):
                     self.rub_rect = self.rubRectInit()
                     self.rub_rect_anchor = self.rubAnchorInit()
                     self.rub_rect_anchor.addGeometry(
-                        QgsGeometry.fromPolyline(self.line_geom)
+                        QgsGeometry.fromPolylineXY(self.line_geom)
                         .buffer(self.swath_distance, 20), None)
                     if self.edit is True:
                         pr = self.lines_layer.dataProvider()
@@ -223,7 +177,7 @@ class SlopeMapTool(QgsMapTool):
                     self.rub_rect = self.rubRectInit()
                     self.rub_rect_anchor = self.rubAnchorInit()
                     self.rub_rect_anchor.addGeometry(
-                        QgsGeometry.fromPolyline(self.line_geom)
+                        QgsGeometry.fromPolylineXY(self.line_geom)
                         .buffer(self.swath_distance, 20), None)
                     if self.edit is True:
                         pr = self.lines_layer.dataProvider()
@@ -242,6 +196,9 @@ class SlopeMapTool(QgsMapTool):
     # Event when user doubleclicks with the mouse
     def canvasDoubleClickEvent(self, e):
         """A double click ends the track edition."""
+        context = QgsExpressionContext()
+        scope = QgsExpressionContextScope()
+        context.appendScope(scope)
         if self.edit is True:
             pr = self.lines_layer.dataProvider()
             ids = [i.id() for i in self.lines_layer.getFeatures()]
@@ -252,7 +209,7 @@ class SlopeMapTool(QgsMapTool):
             geom = ft.geometry().asPolyline()
             if self.swath_display is True:
                 self.rub_rect_anchors.addGeometry(
-                    QgsGeometry.fromPolyline(geom)
+                    QgsGeometry.fromPolylineXY(geom)
                     .buffer(self.swath_distance, 20), None)
             if pr.fieldNameIndex('id') == -1:
                 pr.addAttributes([QgsField('id', QVariant.Int, "int", 6)])
@@ -265,7 +222,7 @@ class SlopeMapTool(QgsMapTool):
                 except:
                     pass
             new_id = int(id_max) + 1
-            index = self.lines_layer.fieldNameIndex("id")
+            index = pr.fieldNameIndex("id")
             self.lines_layer.changeAttributeValue(ft.id(), index, new_id)
             self.lines_layer.commitChanges()
             self.lines_layer.startEditing()
@@ -274,8 +231,9 @@ class SlopeMapTool(QgsMapTool):
                     [QgsField('length', QVariant.Double, "double", 6, 1)])
                 self.lines_layer.updateFields()
             expression = QgsExpression("$length")
-            index = self.lines_layer.fieldNameIndex("length")
-            value = expression.evaluate(ft)
+            index = pr.fieldNameIndex("length")
+            scope.setFeature(ft)
+            value = expression.evaluate(context)
             self.lines_layer.changeAttributeValue(ft.id(), index, value)
             self.lines_layer.changeAttributeValue(ft.id(), index, value)
             self.lines_layer.commitChanges()
@@ -294,9 +252,9 @@ class SlopeMapTool(QgsMapTool):
             e.pos().x(), e.pos().y()
         )
         if self.max_length_hold is True and self.point1coord is not None:
-            pt1 = QgsPoint(self.point1coord)
+            pt1 = QgsPointXY(self.point1coord)
             x1, y1 = self.point1coord
-            pt2 = QgsPoint(point)
+            pt2 = QgsPointXY(point)
             dist = math.sqrt(pt1.sqrDist(pt2))
             if dist >= self.max_length:
                 azimuth = pt1.azimuth(pt2)
@@ -304,7 +262,7 @@ class SlopeMapTool(QgsMapTool):
                 yv = math.cos(math.radians(azimuth)) * self.max_length
                 x2 = x1 + xv
                 y2 = y1 + yv
-                self.point2coord = QgsPoint(x2, y2)
+                self.point2coord = QgsPointXY(x2, y2)
             else:
                 self.point2coord = point
         else:
@@ -312,7 +270,7 @@ class SlopeMapTool(QgsMapTool):
         snap = self.snapper.snapToMap(self.point2coord)
         if snap.isValid() is True:
             x, y = snap.point()
-            self.point2coord = QgsPoint(x, y)
+            self.point2coord = QgsPointXY(x, y)
         self.rub_cursor.removeLastPoint()
         # if self.rub_cursor.asGeometry().asPoint() == (0,0) :
         self.rub_cursor.addPoint(self.point2coord)
@@ -321,7 +279,7 @@ class SlopeMapTool(QgsMapTool):
         if self.swath_display is True:
             self.rub_buff_cursor.reset()
             self.rub_buff_cursor.addGeometry(
-                QgsGeometry.fromPoint(
+                QgsGeometry(
                     QgsPoint(
                         self.point2coord[0],
                         self.point2coord[1]))
@@ -376,6 +334,9 @@ class SlopeMapTool(QgsMapTool):
     def canvasReleaseEvent(self, e):
         """Add new point on the track line.
         A right click ends the track edition."""
+        context = QgsExpressionContext()
+        scope = QgsExpressionContextScope()
+        context.appendScope(scope)
         previousPoint = self.point1coord
         point = self.point2coord
         if previousPoint is not None :
@@ -391,10 +352,10 @@ class SlopeMapTool(QgsMapTool):
             if previousPoint != self.point2coord:
                 if self.edit is False and valueToCheck2 is not None :
                     # First point on line
-                    pt = QgsPoint(point)
+                    pt = QgsPointXY(point)
                     pLine = [pt]
                     ft = QgsFeature()
-                    polyline = QgsGeometry.fromPolyline(pLine)
+                    polyline = QgsGeometry.fromPolylineXY(pLine)
                     ft.setGeometry(polyline)
 
                     pr = self.lines_layer.dataProvider()
@@ -411,7 +372,7 @@ class SlopeMapTool(QgsMapTool):
                 else:
                     if valueToCheck1 is not None and valueToCheck2 is not None :
                         # Add point
-                        pt = QgsPoint(point)
+                        pt = QgsPointXY(point)
                         ids = [i.id() for i in self.lines_layer.getFeatures()]
                         id = ids[-1]
                         iterator = self.lines_layer.getFeatures(
@@ -433,12 +394,12 @@ class SlopeMapTool(QgsMapTool):
                             self.c_left_slope_list, self.c_right_slope_list, True)
                         pr = self.lines_layer.dataProvider()
                         pr.changeGeometryValues(
-                            {ft.id(): QgsGeometry.fromPolyline(geom)})
+                            {ft.id(): QgsGeometry.fromPolylineXY(geom)})
                         self.canvas.refresh()
                         if self.swath_display is True:
                             self.rub_rect_anchor.reset()
                             self.rub_rect_anchor.addGeometry(
-                                QgsGeometry.fromPolyline(geom)
+                                QgsGeometry.fromPolylineXY(geom)
                                 .buffer(self.swath_distance, 20), None)
                         if self.assisted_track is not None:
                             self.helpToNext(
@@ -452,7 +413,7 @@ class SlopeMapTool(QgsMapTool):
         # Right click
         else:
             if self.edit is True and valueToCheck1 is not None and valueToCheck2 is not None:
-                    pt = QgsPoint(point)
+                    pt = QgsPointXY(point)
                     ids = [i.id() for i in self.lines_layer.getFeatures()]
                     id = ids[-1]
                     iterator = self.lines_layer.getFeatures(
@@ -473,11 +434,11 @@ class SlopeMapTool(QgsMapTool):
                         self.c_left_slope_list, self.c_right_slope_list, True)
                     pr = self.lines_layer.dataProvider()
                     pr.changeGeometryValues(
-                        {ft.id(): QgsGeometry.fromPolyline(geom)})
+                        {ft.id(): QgsGeometry.fromPolylineXY(geom)})
                     self.canvas.refresh()
                     if self.swath_display is True:
                         self.rub_rect_anchors.addGeometry(
-                            QgsGeometry.fromPolyline(geom)
+                            QgsGeometry.fromPolylineXY(geom)
                             .buffer(self.swath_distance, 20), None)
                     if pr.fieldNameIndex('id') == -1:
                         pr.addAttributes(
@@ -491,7 +452,7 @@ class SlopeMapTool(QgsMapTool):
                         except:
                             pass
                     new_id = int(id_max) + 1
-                    index = self.lines_layer.fieldNameIndex("id")
+                    index = pr.fieldNameIndex("id")
                     self.lines_layer.changeAttributeValue(
                         ft.id(), index, new_id)
                     self.lines_layer.commitChanges()
@@ -502,8 +463,9 @@ class SlopeMapTool(QgsMapTool):
                                 'length', QVariant.Double, "double", 6, 1)])
                         self.lines_layer.updateFields()
                     expression = QgsExpression("$length")
-                    index = self.lines_layer.fieldNameIndex("length")
-                    value = expression.evaluate(ft)
+                    index = pr.fieldNameIndex("length")
+                    scope.setFeature(ft)
+                    value = expression.evaluate(context)
                     self.lines_layer.changeAttributeValue(
                         ft.id(), index, value)
                     self.lines_layer.commitChanges()
@@ -518,10 +480,12 @@ class SlopeMapTool(QgsMapTool):
     # Event when user closes the plugin
     def deactivate(self):
         """Clean variable and buffer when user changes the Maptool"""
+        context = QgsExpressionContext()
+        scope = QgsExpressionContextScope()
+        context.appendScope(scope)
         if self.edit is True:
             pr = self.lines_layer.dataProvider()
             ids = [i.id() for i in self.lines_layer.getFeatures()]
-            print len(ids)
             if len(ids) != 0 :
                 id = ids[-1]
                 iterator = self.lines_layer.getFeatures(QgsFeatureRequest().setFilterFid(id))
@@ -529,7 +493,7 @@ class SlopeMapTool(QgsMapTool):
                 geom = ft.geometry().asPolyline()
                 if self.swath_display is True:
                     self.rub_rect_anchors.addGeometry(
-                        QgsGeometry.fromPolyline(geom)
+                        QgsGeometry.fromPolylineXY(geom)
                         .buffer(self.swath_distance, 20), None)
                 if pr.fieldNameIndex('id') == -1:
                     pr.addAttributes([QgsField('id', QVariant.Int, "int", 6)])
@@ -537,10 +501,10 @@ class SlopeMapTool(QgsMapTool):
                 id_max = 0
                 for feat in self.lines_layer.getFeatures():
                     id = feat.attribute('id')
-                    if isinstance(feat.attribute('id'),long)==True :
+                    if isinstance(feat.attribute('id'),int)==True :
                         id_max = max(id_max, id)
                 new_id = int(id_max) + 1
-                index = self.lines_layer.fieldNameIndex("id")
+                index = pr.fieldNameIndex("id")
                 self.lines_layer.changeAttributeValue(ft.id(), index, new_id)
                 self.lines_layer.commitChanges()
                 self.lines_layer.startEditing()
@@ -549,8 +513,9 @@ class SlopeMapTool(QgsMapTool):
                         [QgsField('length', QVariant.Double, "double", 6, 1)])
                     self.lines_layer.updateFields()
                 expression = QgsExpression("$length")
-                index = self.lines_layer.fieldNameIndex("length")
-                value = expression.evaluate(ft)
+                index = pr.fieldNameIndex("length")
+                scope.setFeature(ft)
+                value = expression.evaluate(context)
                 self.lines_layer.changeAttributeValue(ft.id(), index, value)
                 self.lines_layer.changeAttributeValue(ft.id(), index, value)
                 self.lines_layer.commitChanges()
@@ -593,7 +558,7 @@ class SlopeMapTool(QgsMapTool):
             cosa = math.sin(az)
             cosb = math.cos(az)
 
-            next_point = QgsPoint(xp+(dist*cosa), yp+(dist*cosb))
+            next_point = QgsPointXY(xp+(dist*cosa), yp+(dist*cosb))
             a_slope, _, _, _ = self.slopeCalc(eP, next_point)
             if last_aslope == 'p' and a_slope > 0.0:
                 if a_slope < wanted_a_slope:
@@ -607,7 +572,7 @@ class SlopeMapTool(QgsMapTool):
                 self.next_point = next_point
                 points = [eP, next_point]
                 self.rub_helpline.addGeometry(
-                    QgsGeometry.fromPolyline(points), None
+                    QgsGeometry.fromPolylineXY(points), None
                 )
             else:
                 alpha_b = None
@@ -620,9 +585,9 @@ class SlopeMapTool(QgsMapTool):
                     cosa2 = math.sin(az2)
                     cosb2 = math.cos(az2)
 
-                    next_point1 = QgsPoint(xp+(dist*cosa1), yp+(dist*cosb1))
+                    next_point1 = QgsPointXY(xp+(dist*cosa1), yp+(dist*cosb1))
                     a_slope1, _, _, _ = self.slopeCalc(eP, next_point1)
-                    next_point2 = QgsPoint(xp+(dist*cosa2), yp+(dist*cosb2))
+                    next_point2 = QgsPointXY(xp+(dist*cosa2), yp+(dist*cosb2))
                     a_slope2, _, _, _ = self.slopeCalc(eP, next_point2)
 
                     if last_aslope == 'p' and a_slope1 > 0:
@@ -642,7 +607,7 @@ class SlopeMapTool(QgsMapTool):
                         points = [eP, next_point1]
                         self.rub_helpline.reset()
                         self.rub_helpline.addGeometry(
-                            QgsGeometry.fromPolyline(points), None
+                            QgsGeometry.fromPolylineXY(points), None
                         )
                         break
 
@@ -663,7 +628,7 @@ class SlopeMapTool(QgsMapTool):
                         points = [eP, next_point1]
                         self.rub_helpline.reset()
                         self.rub_helpline.addGeometry(
-                            QgsGeometry.fromPolyline(points), None
+                            QgsGeometry.fromPolylineXY(points), None
                         )
                         break
 
@@ -671,20 +636,20 @@ class SlopeMapTool(QgsMapTool):
                     az = math.radians(azimuth+alpha_b)
                     cosa = math.sin(az)
                     cosb = math.cos(az)
-                    next_point = QgsPoint(
+                    next_point = QgsPointXY(
                         xp+(dist*cosa), yp+(dist*cosb)
                     )
                     self.next_point = next_point
                     points = [eP, next_point]
                     self.rub_helpline.reset()
                     self.rub_helpline.addGeometry(
-                        QgsGeometry.fromPolyline(points), None
+                        QgsGeometry.fromPolylineXY(points), None
                     )
                 elif best != 100:
                     self.next_point = next_point
                     points = [eP, next_point]
                     self.rub_helpline.addGeometry(
-                        QgsGeometry.fromPolyline(points), None
+                        QgsGeometry.fromPolylineXY(points), None
                     )
 
         elif method == 'c':
@@ -704,7 +669,7 @@ class SlopeMapTool(QgsMapTool):
                 cosa = math.sin(az)
                 cosb = math.cos(az)
 
-                next_point = QgsPoint(xp+(dist*cosa), yp+(dist*cosb))
+                next_point = QgsPointXY(xp+(dist*cosa), yp+(dist*cosb))
                 a_slope, c_left_slope, c_right_slope, _ = self.slopeCalc(
                     eP, next_point
                 )
@@ -737,7 +702,7 @@ class SlopeMapTool(QgsMapTool):
 
     def helpConstruct(self):
         previousPoint = self.point1coord
-        pt = QgsPoint(self.next_point)
+        pt = QgsPointXY(self.next_point)
         if self.interpolate_act is True:
             self.a_slope, self.c_left_slope, \
                 self.c_right_slope, self.length = \
@@ -771,12 +736,12 @@ class SlopeMapTool(QgsMapTool):
             self.c_left_slope_list, self.c_right_slope_list, True)
         pr = self.lines_layer.dataProvider()
         pr.changeGeometryValues(
-            {ft.id(): QgsGeometry.fromPolyline(geom)})
+            {ft.id(): QgsGeometry.fromPolylineXY(geom)})
         self.canvas.refresh()
         if self.swath_display is True:
             self.rub_rect_anchor.reset()
             self.rub_rect_anchor.addGeometry(
-                QgsGeometry.fromPolyline(geom)
+                QgsGeometry.fromPolylineXY(geom)
                 .buffer(self.swath_distance, 20), None)
         self.helpToNext(previousPoint, pt, self.assisted_track)
         self.point1coord = pt
@@ -814,7 +779,7 @@ class SlopeMapTool(QgsMapTool):
                         self.c_left_slope_list, self.c_right_slope_list, True)
                     pr = self.lines_layer.dataProvider()
                     pr.changeGeometryValues(
-                        {ft.id(): QgsGeometry.fromPolyline(geom)})
+                        {ft.id(): QgsGeometry.fromPolylineXY(geom)})
                     self.canvas.refresh()
 
                     self.rubDisplayUp()
@@ -822,7 +787,7 @@ class SlopeMapTool(QgsMapTool):
                         # Actualize rub_rect_anchor
                         self.rub_rect_anchor.reset()
                         self.rub_rect_anchor.addGeometry(
-                            QgsGeometry.fromPolyline(geom)
+                            QgsGeometry.fromPolylineXY(geom)
                             .buffer(self.swath_distance, 20), None)
                     if (
                         self.assisted_track is not None
@@ -932,7 +897,7 @@ class SlopeMapTool(QgsMapTool):
                     geom= geom.asPolyline()
                     if len(geom) > 1 :
                         rubber.addGeometry(
-                            QgsGeometry.fromPolyline(geom)
+                            QgsGeometry.fromPolylineXY(geom)
                             .buffer(self.swath_distance, 20), None)
         rubber.setColor(self.b_color)
         rubber.setWidth(2)
@@ -970,8 +935,8 @@ class SlopeMapTool(QgsMapTool):
 
         x1, y1 = self.point1coord
         x2, y2 = self.point2coord
-        points = [QgsPoint(x1, y1), QgsPoint(x2, y2)]
-        self.rub_polyline.addGeometry(QgsGeometry.fromPolyline(points), None)
+        points = [QgsPointXY(x1, y1), QgsPointXY(x2, y2)]
+        self.rub_polyline.addGeometry(QgsGeometry.fromPolylineXY(points), None)
         if self.assisted_track != 'e' :
             if self.length < self.max_length:
                 if self.a_slope < self.tolerated_a_slope \
@@ -1014,7 +979,7 @@ class SlopeMapTool(QgsMapTool):
     def rubDisplayUpRect(self, points):
         self.rub_rect.reset()
         self.rub_rect.addGeometry(
-            QgsGeometry.fromPolyline(points)
+            QgsGeometry.fromPolylineXY(points)
             .buffer(self.swath_distance, 20), None)
 
     def rubHelpLineInit(self):
@@ -1088,7 +1053,7 @@ class SlopeMapTool(QgsMapTool):
         Yv = dist * math.sin(math.radians(angle))
 
         # Center value
-        center_point = QgsPoint(xc, yc)
+        center_point = QgsPointXY(xc, yc)
         z_center_point_value = self.zInterpolate(center_point)
 
         # Left side
@@ -1099,13 +1064,13 @@ class SlopeMapTool(QgsMapTool):
         x_pointleft_end = x2 + Xv
         y_pointleft_end = y2 - Yv
 
-        pointleft_beg = QgsPoint(x_pointleft_beg, y_pointleft_beg)
+        pointleft_beg = QgsPointXY(x_pointleft_beg, y_pointleft_beg)
         z_left_beg_value = self.zInterpolate(pointleft_beg)
 
-        pointleft_cen = QgsPoint(x_pointleft_cen, y_pointleft_cen)
+        pointleft_cen = QgsPointXY(x_pointleft_cen, y_pointleft_cen)
         z_left_cen_value = self.zInterpolate(pointleft_cen)
 
-        pointleft_end = QgsPoint(x_pointleft_end, y_pointleft_end)
+        pointleft_end = QgsPointXY(x_pointleft_end, y_pointleft_end)
         z_left_end_value = self.zInterpolate(pointleft_end)
 
         if z_left_beg_value is not None and z_start_value is not None \
@@ -1128,13 +1093,13 @@ class SlopeMapTool(QgsMapTool):
         x_pointright_end = x2 - Xv
         y_pointright_end = y2 + Yv
 
-        pointright_beg = QgsPoint(x_pointright_beg, y_pointright_beg)
+        pointright_beg = QgsPointXY(x_pointright_beg, y_pointright_beg)
         z_right_beg_value = self.zInterpolate(pointright_beg)
 
-        pointright_cen = QgsPoint(x_pointright_cen, y_pointright_cen)
+        pointright_cen = QgsPointXY(x_pointright_cen, y_pointright_cen)
         z_right_cen_value = self.zInterpolate(pointright_cen)
 
-        pointright_end = QgsPoint(x_pointright_end, y_pointright_end)
+        pointright_end = QgsPointXY(x_pointright_end, y_pointright_end)
         z_right_end_value = self.zInterpolate(pointright_end)
 
         if z_right_beg_value is not None and z_start_value is not None \
@@ -1191,7 +1156,7 @@ class SlopeMapTool(QgsMapTool):
         Yv = dist * math.sin(math.radians(angle))
 
         # Center value
-        center_point = QgsPoint(xc, yc)
+        center_point = QgsPointXY(xc, yc)
         z_center_point_ident = self.dem.dataProvider().identify(
             center_point, QgsRaster.IdentifyFormatValue)
         z_center_point_value = z_center_point_ident.results()[1]
@@ -1204,17 +1169,17 @@ class SlopeMapTool(QgsMapTool):
         x_pointleft_end = x2 + Xv
         y_pointleft_end = y2 - Yv
 
-        pointleft_beg = QgsPoint(x_pointleft_beg, y_pointleft_beg)
+        pointleft_beg = QgsPointXY(x_pointleft_beg, y_pointleft_beg)
         z_left_beg_ident = self.dem.dataProvider().identify(
             pointleft_beg, QgsRaster.IdentifyFormatValue)
         z_left_beg_value = z_left_beg_ident.results()[1]
 
-        pointleft_cen = QgsPoint(x_pointleft_cen, y_pointleft_cen)
+        pointleft_cen = QgsPointXY(x_pointleft_cen, y_pointleft_cen)
         z_left_cen_ident = self.dem.dataProvider().identify(
             pointleft_cen, QgsRaster.IdentifyFormatValue)
         z_left_cen_value = z_left_cen_ident.results()[1]
 
-        pointleft_end = QgsPoint(x_pointleft_end, y_pointleft_end)
+        pointleft_end = QgsPointXY(x_pointleft_end, y_pointleft_end)
         z_left_end_ident = self.dem.dataProvider().identify(
             pointleft_end, QgsRaster.IdentifyFormatValue)
         z_left_end_value = z_left_end_ident.results()[1]
@@ -1239,17 +1204,17 @@ class SlopeMapTool(QgsMapTool):
         x_pointright_end = x2 - Xv
         y_pointright_end = y2 + Yv
 
-        pointright_beg = QgsPoint(x_pointright_beg, y_pointright_beg)
+        pointright_beg = QgsPointXY(x_pointright_beg, y_pointright_beg)
         z_right_beg_ident = self.dem.dataProvider().identify(
             pointright_beg, QgsRaster.IdentifyFormatValue)
         z_right_beg_value = z_right_beg_ident.results()[1]
 
-        pointright_cen = QgsPoint(x_pointright_cen, y_pointright_cen)
+        pointright_cen = QgsPointXY(x_pointright_cen, y_pointright_cen)
         z_right_cen_ident = self.dem.dataProvider().identify(
             pointright_cen, QgsRaster.IdentifyFormatValue)
         z_right_cen_value = z_right_cen_ident.results()[1]
 
-        pointright_end = QgsPoint(x_pointright_end, y_pointright_end)
+        pointright_end = QgsPointXY(x_pointright_end, y_pointright_end)
         z_right_end_ident = self.dem.dataProvider().identify(
             pointright_end, QgsRaster.IdentifyFormatValue)
         z_right_end_value = z_right_end_ident.results()[1]
@@ -1272,7 +1237,7 @@ class SlopeMapTool(QgsMapTool):
     def snapperDef(self):
         """Perform snap during edition"""
         snapper = QgsSnappingUtils()
-        snapper.readConfigFromProject()
+        snapper.setConfig(QgsProject.instance().snappingConfig())
         snapper.setMapSettings(self.canvas.mapSettings())
         return snapper
 
@@ -1290,37 +1255,37 @@ class SlopeMapTool(QgsMapTool):
         base_y = y % self.y_res
 
         if base_x == 0 and base_y == 0:
-            pt1 = QgsPoint((x - self.x_res / 2), (y - self.y_res / 2))
+            pt1 = QgsPointXY((x - self.x_res / 2), (y - self.y_res / 2))
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
             pt1_value = pt1_ident.results()[1]
-            pt2 = QgsPoint((x + self.x_res / 2), (y - self.y_res / 2))
+            pt2 = QgsPointXY((x + self.x_res / 2), (y - self.y_res / 2))
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint((x - self.x_res / 2), (y + self.y_res / 2))
+            pt3 = QgsPointXY((x - self.x_res / 2), (y + self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
+            pt4 = QgsPointXY((x + self.x_res / 2), (y + self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
             z_value = (pt1_value + pt2_value + pt3_value + pt4_value) / 4
         elif base_x == 0 and base_y <= (self.y_res / 2):
-            pt1 = QgsPoint((x + self.x_res / 2), y)
+            pt1 = QgsPointXY((x + self.x_res / 2), y)
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
             pt1_value = pt1_ident.results()[1]
-            pt2 = QgsPoint((x - self.x_res / 2), y)
+            pt2 = QgsPointXY((x - self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint((x + self.x_res / 2), (y - self.y_res / 2))
+            pt3 = QgsPointXY((x + self.x_res / 2), (y - self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x - self.x_res / 2), (y - self.y_res / 2))
+            pt4 = QgsPointXY((x - self.x_res / 2), (y - self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1333,19 +1298,19 @@ class SlopeMapTool(QgsMapTool):
                     + pt4_value
                     * math.fabs(self.y_res / 2 - base_y)) / self.y_res)) / 2
         elif base_x == 0 and base_y > (self.y_res / 2):
-            pt1 = QgsPoint((x + self.x_res / 2), y)
+            pt1 = QgsPointXY((x + self.x_res / 2), y)
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
             pt1_value = pt1_ident.results()[1]
-            pt2 = QgsPoint((x - self.x_res / 2), y)
+            pt2 = QgsPointXY((x - self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
+            pt3 = QgsPointXY((x + self.x_res / 2), (y + self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x - self.x_res / 2), (y + self.y_res / 2))
+            pt4 = QgsPointXY((x - self.x_res / 2), (y + self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1358,19 +1323,19 @@ class SlopeMapTool(QgsMapTool):
                     + pt4_value
                     * math.fabs(self.y_res / 2 - base_y)) / self.y_res)) / 2
         elif base_x <= (self.x_res / 2) and base_y == 0:
-            pt1 = QgsPoint(x, (y + self.y_res / 2))
+            pt1 = QgsPointXY(x, (y + self.y_res / 2))
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
             pt1_value = pt1_ident.results()[1]
-            pt2 = QgsPoint((x - self.x_res / 2), (y + self.y_res / 2))
+            pt2 = QgsPointXY((x - self.x_res / 2), (y + self.y_res / 2))
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y - self.y_res / 2))
+            pt3 = QgsPointXY(x, (y - self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x - self.x_res / 2), (y - self.y_res / 2))
+            pt4 = QgsPointXY((x - self.x_res / 2), (y - self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1380,19 +1345,19 @@ class SlopeMapTool(QgsMapTool):
                 + ((pt2_value + pt4_value) / 2)
                 * math.fabs(self.x_res / 2 - base_x)) / self.x_res
         elif base_x > (self.x_res / 2) and base_y == 0:
-            pt1 = QgsPoint(x, (y + self.y_res / 2))
+            pt1 = QgsPointXY(x, (y + self.y_res / 2))
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
             pt1_value = pt1_ident.results()[1]
-            pt2 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
+            pt2 = QgsPointXY((x + self.x_res / 2), (y + self.y_res / 2))
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y - self.y_res / 2))
+            pt3 = QgsPointXY(x, (y - self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x + self.x_res / 2), (y - self.y_res / 2))
+            pt4 = QgsPointXY((x + self.x_res / 2), (y - self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1402,15 +1367,15 @@ class SlopeMapTool(QgsMapTool):
                 + ((pt2_value + pt4_value) / 2)
                 * math.fabs(self.x_res / 2 - base_x)) / self.x_res
         elif base_x <= (self.x_res / 2) and base_y <= (self.y_res / 2):
-            pt2 = QgsPoint((x - self.x_res / 2), y)
+            pt2 = QgsPointXY((x - self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y - self.y_res / 2))
+            pt3 = QgsPointXY(x, (y - self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x - self.x_res / 2), (y - self.y_res / 2))
+            pt4 = QgsPointXY((x - self.x_res / 2), (y - self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1425,15 +1390,15 @@ class SlopeMapTool(QgsMapTool):
                     * math.fabs(self.y_res/2 - base_y)) / self.y_res)
                 * math.fabs(self.x_res / 2 - base_x)) / self.x_res)
         elif base_x <= (self.x_res / 2) and base_y > (self.y_res / 2):
-            pt2 = QgsPoint((x - self.x_res / 2), y)
+            pt2 = QgsPointXY((x - self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y + self.y_res / 2))
+            pt3 = QgsPointXY(x, (y + self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x - self.x_res / 2), (y + self.y_res / 2))
+            pt4 = QgsPointXY((x - self.x_res / 2), (y + self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1449,15 +1414,15 @@ class SlopeMapTool(QgsMapTool):
                     / self.y_res)
                 * math.fabs(self.x_res / 2 - base_x)) / self.x_res
         elif base_x > (self.x_res / 2) and base_y <= (self.y_res / 2):
-            pt2 = QgsPoint((x + self.x_res / 2), y)
+            pt2 = QgsPointXY((x + self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y - self.y_res / 2))
+            pt3 = QgsPointXY(x, (y - self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x + self.x_res / 2), (y - self.y_res / 2))
+            pt4 = QgsPointXY((x + self.x_res / 2), (y - self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1472,15 +1437,15 @@ class SlopeMapTool(QgsMapTool):
                     / self.y_res)
                 * math.fabs(self.x_res / 2 - base_x)) / self.x_res)
         elif base_x > (self.x_res / 2) and base_y > (self.y_res / 2):
-            pt2 = QgsPoint((x + self.x_res / 2), y)
+            pt2 = QgsPointXY((x + self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y + self.y_res / 2))
+            pt3 = QgsPointXY(x, (y + self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
+            pt4 = QgsPointXY((x + self.x_res / 2), (y + self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1550,7 +1515,7 @@ class SelectMapTool(QgsMapTool):
             e.pos().x(), e.pos().y())
         scale = self.canvas.mapUnitsPerPixel()
         pix_tol = 10
-        pt_geom = QgsGeometry().fromPoint(pt)
+        pt_geom = QgsGeometry().fromPointXY(QgsPointXY(pt))
         pt_geom = pt_geom.buffer(scale*pix_tol, 20)
         catch = False
         result = None
@@ -1656,7 +1621,7 @@ class SelectMapTool(QgsMapTool):
         Yv = dist * math.sin(math.radians(angle))
 
         # Center value
-        center_point = QgsPoint(xc, yc)
+        center_point = QgsPointXY(xc, yc)
         z_center_point_value = self.zInterpolate(center_point)
 
         # Left side
@@ -1667,13 +1632,13 @@ class SelectMapTool(QgsMapTool):
         x_pointleft_end = x2 + Xv
         y_pointleft_end = y2 - Yv
 
-        pointleft_beg = QgsPoint(x_pointleft_beg, y_pointleft_beg)
+        pointleft_beg = QgsPointXY(x_pointleft_beg, y_pointleft_beg)
         z_left_beg_value = self.zInterpolate(pointleft_beg)
 
-        pointleft_cen = QgsPoint(x_pointleft_cen, y_pointleft_cen)
+        pointleft_cen = QgsPointXY(x_pointleft_cen, y_pointleft_cen)
         z_left_cen_value = self.zInterpolate(pointleft_cen)
 
-        pointleft_end = QgsPoint(x_pointleft_end, y_pointleft_end)
+        pointleft_end = QgsPointXY(x_pointleft_end, y_pointleft_end)
         z_left_end_value = self.zInterpolate(pointleft_end)
 
         if (
@@ -1698,13 +1663,13 @@ class SelectMapTool(QgsMapTool):
         x_pointright_end = x2 - Xv
         y_pointright_end = y2 + Yv
 
-        pointright_beg = QgsPoint(x_pointright_beg, y_pointright_beg)
+        pointright_beg = QgsPointXY(x_pointright_beg, y_pointright_beg)
         z_right_beg_value = self.zInterpolate(pointright_beg)
 
-        pointright_cen = QgsPoint(x_pointright_cen, y_pointright_cen)
+        pointright_cen = QgsPointXY(x_pointright_cen, y_pointright_cen)
         z_right_cen_value = self.zInterpolate(pointright_cen)
 
-        pointright_end = QgsPoint(x_pointright_end, y_pointright_end)
+        pointright_end = QgsPointXY(x_pointright_end, y_pointright_end)
         z_right_end_value = self.zInterpolate(pointright_end)
 
         if (
@@ -1763,7 +1728,7 @@ class SelectMapTool(QgsMapTool):
         Yv = dist * math.sin(math.radians(angle))
 
         # Center value
-        center_point = QgsPoint(xc, yc)
+        center_point = QgsPointXY(xc, yc)
         z_center_point_ident = self.dem.dataProvider().identify(
             center_point, QgsRaster.IdentifyFormatValue)
         z_center_point_value = z_center_point_ident.results()[1]
@@ -1776,17 +1741,17 @@ class SelectMapTool(QgsMapTool):
         x_pointleft_end = x2 + Xv
         y_pointleft_end = y2 - Yv
 
-        pointleft_beg = QgsPoint(x_pointleft_beg, y_pointleft_beg)
+        pointleft_beg = QgsPointXY(x_pointleft_beg, y_pointleft_beg)
         z_left_beg_ident = self.dem.dataProvider().identify(
             pointleft_beg, QgsRaster.IdentifyFormatValue)
         z_left_beg_value = z_left_beg_ident.results()[1]
 
-        pointleft_cen = QgsPoint(x_pointleft_cen, y_pointleft_cen)
+        pointleft_cen = QgsPointXY(x_pointleft_cen, y_pointleft_cen)
         z_left_cen_ident = self.dem.dataProvider().identify(
             pointleft_cen, QgsRaster.IdentifyFormatValue)
         z_left_cen_value = z_left_cen_ident.results()[1]
 
-        pointleft_end = QgsPoint(x_pointleft_end, y_pointleft_end)
+        pointleft_end = QgsPointXY(x_pointleft_end, y_pointleft_end)
         z_left_end_ident = self.dem.dataProvider().identify(
             pointleft_end, QgsRaster.IdentifyFormatValue)
         z_left_end_value = z_left_end_ident.results()[1]
@@ -1814,17 +1779,17 @@ class SelectMapTool(QgsMapTool):
         x_pointright_end = x2 - Xv
         y_pointright_end = y2 + Yv
 
-        pointright_beg = QgsPoint(x_pointright_beg, y_pointright_beg)
+        pointright_beg = QgsPointXY(x_pointright_beg, y_pointright_beg)
         z_right_beg_ident = self.dem.dataProvider().identify(
             pointright_beg, QgsRaster.IdentifyFormatValue)
         z_right_beg_value = z_right_beg_ident.results()[1]
 
-        pointright_cen = QgsPoint(x_pointright_cen, y_pointright_cen)
+        pointright_cen = QgsPointXY(x_pointright_cen, y_pointright_cen)
         z_right_cen_ident = self.dem.dataProvider().identify(
             pointright_cen, QgsRaster.IdentifyFormatValue)
         z_right_cen_value = z_right_cen_ident.results()[1]
 
-        pointright_end = QgsPoint(x_pointright_end, y_pointright_end)
+        pointright_end = QgsPointXY(x_pointright_end, y_pointright_end)
         z_right_end_ident = self.dem.dataProvider().identify(
             pointright_end, QgsRaster.IdentifyFormatValue)
         z_right_end_value = z_right_end_ident.results()[1]
@@ -1859,37 +1824,37 @@ class SelectMapTool(QgsMapTool):
         base_y = y % self.y_res
 
         if base_x == 0 and base_y == 0:
-            pt1 = QgsPoint((x - self.x_res / 2), (y - self.y_res / 2))
+            pt1 = QgsPointXY((x - self.x_res / 2), (y - self.y_res / 2))
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
             pt1_value = pt1_ident.results()[1]
-            pt2 = QgsPoint((x + self.x_res / 2), (y - self.y_res / 2))
+            pt2 = QgsPointXY((x + self.x_res / 2), (y - self.y_res / 2))
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint((x - self.x_res / 2), (y + self.y_res / 2))
+            pt3 = QgsPointXY((x - self.x_res / 2), (y + self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
+            pt4 = QgsPointXY((x + self.x_res / 2), (y + self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
             z_value = (pt1_value + pt2_value + pt3_value + pt4_value) / 4
         elif base_x == 0 and base_y <= (self.y_res / 2):
-            pt1 = QgsPoint((x+self.x_res / 2), y)
+            pt1 = QgsPointXY((x+self.x_res / 2), y)
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
             pt1_value = pt1_ident.results()[1]
-            pt2 = QgsPoint((x-self.x_res / 2), y)
+            pt2 = QgsPointXY((x-self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint((x+self.x_res / 2), (y-self.y_res / 2))
+            pt3 = QgsPointXY((x+self.x_res / 2), (y-self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x-self.x_res / 2), (y - self.y_res / 2))
+            pt4 = QgsPointXY((x-self.x_res / 2), (y - self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1902,19 +1867,19 @@ class SelectMapTool(QgsMapTool):
                     + pt4_value * math.fabs(self.y_res / 2 - base_y))
                     / self.y_res)) / 2
         elif base_x == 0 and base_y > (self.y_res / 2):
-            pt1 = QgsPoint((x + self.x_res / 2), y)
+            pt1 = QgsPointXY((x + self.x_res / 2), y)
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
             pt1_value = pt1_ident.results()[1]
-            pt2 = QgsPoint((x - self.x_res / 2), y)
+            pt2 = QgsPointXY((x - self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
+            pt3 = QgsPointXY((x + self.x_res / 2), (y + self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x - self.x_res / 2), (y + self.y_res / 2))
+            pt4 = QgsPointXY((x - self.x_res / 2), (y + self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1927,19 +1892,19 @@ class SelectMapTool(QgsMapTool):
                     + pt4_value
                     * math.fabs(self.y_res / 2 - base_y)) / self.y_res)) / 2
         elif base_x <= (self.x_res / 2) and base_y == 0:
-            pt1 = QgsPoint(x, (y+self.y_res/2))
+            pt1 = QgsPointXY(x, (y+self.y_res/2))
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
             pt1_value = pt1_ident.results()[1]
-            pt2 = QgsPoint((x - self.x_res / 2), (y + self.y_res / 2))
+            pt2 = QgsPointXY((x - self.x_res / 2), (y + self.y_res / 2))
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y - self.y_res / 2))
+            pt3 = QgsPointXY(x, (y - self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x - self.x_res / 2), (y - self.y_res / 2))
+            pt4 = QgsPointXY((x - self.x_res / 2), (y - self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1949,19 +1914,19 @@ class SelectMapTool(QgsMapTool):
                 + ((pt2_value + pt4_value) / 2)
                 * math.fabs(self.x_res / 2 - base_x)) / self.x_res
         elif base_x > (self.x_res / 2) and base_y == 0:
-            pt1 = QgsPoint(x, (y + self.y_res / 2))
+            pt1 = QgsPointXY(x, (y + self.y_res / 2))
             pt1_ident = self.dem.dataProvider().identify(
                 pt1, QgsRaster.IdentifyFormatValue)
             pt1_value = pt1_ident.results()[1]
-            pt2 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
+            pt2 = QgsPointXY((x + self.x_res / 2), (y + self.y_res / 2))
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y - self.y_res / 2))
+            pt3 = QgsPointXY(x, (y - self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x + self.x_res / 2), (y - self.y_res / 2))
+            pt4 = QgsPointXY((x + self.x_res / 2), (y - self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1971,15 +1936,15 @@ class SelectMapTool(QgsMapTool):
                 + ((pt2_value+pt4_value) / 2)
                 * math.fabs(self.x_res/2 - base_x)) / self.x_res
         elif base_x <= (self.x_res/2) and base_y <= (self.y_res/2):
-            pt2 = QgsPoint((x-self.x_res/2), y)
+            pt2 = QgsPointXY((x-self.x_res/2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y-self.y_res/2))
+            pt3 = QgsPointXY(x, (y-self.y_res/2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x-self.x_res/2), (y-self.y_res/2))
+            pt4 = QgsPointXY((x-self.x_res/2), (y-self.y_res/2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -1994,15 +1959,15 @@ class SelectMapTool(QgsMapTool):
                     / self.y_res)
                 * math.fabs(self.x_res / 2 - base_x)) / self.x_res
         elif base_x <= (self.x_res / 2) and base_y > (self.y_res / 2):
-            pt2 = QgsPoint((x - self.x_res / 2), y)
+            pt2 = QgsPointXY((x - self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y + self.y_res / 2))
+            pt3 = QgsPointXY(x, (y + self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x - self.x_res / 2), (y + self.y_res / 2))
+            pt4 = QgsPointXY((x - self.x_res / 2), (y + self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -2017,15 +1982,15 @@ class SelectMapTool(QgsMapTool):
                     / self.y_res)
                 * math.fabs(self.x_res / 2 - base_x)) / self.x_res
         elif base_x > (self.x_res / 2) and base_y <= (self.y_res / 2):
-            pt2 = QgsPoint((x + self.x_res / 2), y)
+            pt2 = QgsPointXY((x + self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y - self.y_res / 2))
+            pt3 = QgsPointXY(x, (y - self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x + self.x_res / 2), (y - self.y_res / 2))
+            pt4 = QgsPointXY((x + self.x_res / 2), (y - self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]
@@ -2040,15 +2005,15 @@ class SelectMapTool(QgsMapTool):
                     / self.y_res)
                 * math.fabs(self.x_res / 2 - base_x)) / self.x_res
         elif base_x > (self.x_res / 2) and base_y > (self.y_res / 2):
-            pt2 = QgsPoint((x + self.x_res / 2), y)
+            pt2 = QgsPointXY((x + self.x_res / 2), y)
             pt2_ident = self.dem.dataProvider().identify(
                 pt2, QgsRaster.IdentifyFormatValue)
             pt2_value = pt2_ident.results()[1]
-            pt3 = QgsPoint(x, (y + self.y_res / 2))
+            pt3 = QgsPointXY(x, (y + self.y_res / 2))
             pt3_ident = self.dem.dataProvider().identify(
                 pt3, QgsRaster.IdentifyFormatValue)
             pt3_value = pt3_ident.results()[1]
-            pt4 = QgsPoint((x + self.x_res / 2), (y + self.y_res / 2))
+            pt4 = QgsPointXY((x + self.x_res / 2), (y + self.y_res / 2))
             pt4_ident = self.dem.dataProvider().identify(
                 pt4, QgsRaster.IdentifyFormatValue)
             pt4_value = pt4_ident.results()[1]

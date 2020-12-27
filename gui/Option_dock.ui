@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>382</width>
+    <height>570</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QWidget" name="">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>361</width>
+     <height>552</height>
+    </rect>
+   </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="title1">
+      <property name="minimumSize">
+       <size>
+        <width>251</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+        <underline>true</underline>
+       </font>
+      </property>
+      <property name="text">
+       <string>Variable for slope calculation</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="sideDistLabel">
+      <property name="minimumSize">
+       <size>
+        <width>201</width>
+        <height>21</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Side distance (m) :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" colspan="2">
+     <widget class="QSpinBox" name="sideDistSpinBox">
+      <property name="maximum">
+       <number>999</number>
+      </property>
+      <property name="value">
+       <number>15</number>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QCheckBox" name="interpolCheckBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>191</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>DEM Interpolate</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="title2">
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+        <underline>true</underline>
+       </font>
+      </property>
+      <property name="text">
+       <string>Graphical visualisation</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QLabel" name="ColorLabel">
+      <property name="minimumSize">
+       <size>
+        <width>180</width>
+        <height>41</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Ruberband colors :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QgsColorButton" name="T_ColorButton">
+      <property name="color" stdset="0">
+       <color alpha="0">
+        <red>0</red>
+        <green>255</green>
+        <blue>0</blue>
+       </color>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="2">
+     <widget class="QgsColorButton" name="F_ColorButton">
+      <property name="color" stdset="0">
+       <color alpha="0">
+        <red>255</red>
+        <green>0</green>
+        <blue>0</blue>
+       </color>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0">
+     <widget class="QLabel" name="toleratedASlopeLabel">
+      <property name="minimumSize">
+       <size>
+        <width>201</width>
+        <height>41</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Tolerated slope (along) in percent :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="1" colspan="2">
+     <widget class="QSpinBox" name="toleratedASlopeSpinBox">
+      <property name="maximum">
+       <number>300</number>
+      </property>
+      <property name="value">
+       <number>10</number>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <widget class="QLabel" name="toleratedCSlopeLabel">
+      <property name="minimumSize">
+       <size>
+        <width>201</width>
+        <height>41</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Tolerated slope (cross) in percent :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="1" colspan="2">
+     <widget class="QSpinBox" name="toleratedCSlopeSpinBox">
+      <property name="maximum">
+       <number>300</number>
+      </property>
+      <property name="value">
+       <number>4</number>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="0">
+     <widget class="QLabel" name="maxLengthLabel">
+      <property name="minimumSize">
+       <size>
+        <width>201</width>
+        <height>41</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Maximum length tolerated (m) :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="1" colspan="2">
+     <widget class="QSpinBox" name="maxLengthSpinBox">
+      <property name="maximum">
+       <number>300</number>
+      </property>
+      <property name="value">
+       <number>50</number>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="0">
+     <widget class="QCheckBox" name="maxLengthCheckBox">
+      <property name="text">
+       <string>Hold distance</string>
+      </property>
+      <property name="checked">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="0">
+     <widget class="QLabel" name="ColorLabel2">
+      <property name="minimumSize">
+       <size>
+        <width>175</width>
+        <height>41</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Ruberband colors if length exceed  :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="1">
+     <widget class="QgsColorButton" name="TL_ColorButton">
+      <property name="color" stdset="0">
+       <color alpha="0">
+        <red>101</red>
+        <green>166</green>
+        <blue>101</blue>
+       </color>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="2">
+     <widget class="QgsColorButton" name="FL_ColorButton">
+      <property name="color" stdset="0">
+       <color alpha="0">
+        <red>130</red>
+        <green>54</green>
+        <blue>54</blue>
+       </color>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="0">
+     <widget class="QLabel" name="swathDistLabel">
+      <property name="minimumSize">
+       <size>
+        <width>201</width>
+        <height>41</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Swath distance for harvest (m) :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="1" colspan="2">
+     <widget class="QSpinBox" name="swathDistSpinBox">
+      <property name="maximum">
+       <number>300</number>
+      </property>
+      <property name="value">
+       <number>30</number>
+      </property>
+     </widget>
+    </item>
+    <item row="11" column="0">
+     <widget class="QCheckBox" name="swathDistCheckBox">
+      <property name="minimumSize">
+       <size>
+        <width>171</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Display buffer</string>
+      </property>
+     </widget>
+    </item>
+    <item row="12" column="0">
+     <widget class="QLabel" name="BuffLabel">
+      <property name="minimumSize">
+       <size>
+        <width>180</width>
+        <height>41</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Buffer color :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="12" column="1">
+     <widget class="QgsColorButton" name="B_ColorButton">
+      <property name="color" stdset="0">
+       <color alpha="0">
+        <red>0</red>
+        <green>255</green>
+        <blue>0</blue>
+       </color>
+      </property>
+     </widget>
+    </item>
+    <item row="13" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Assisted track :</string>
+      </property>
+     </widget>
+    </item>
+    <item row="13" column="1">
+     <widget class="QgsColorButton" name="A_ColorButton">
+      <property name="color" stdset="0">
+       <color alpha="0">
+        <red>0</red>
+        <green>255</green>
+        <blue>0</blue>
+       </color>
+      </property>
+     </widget>
+    </item>
+    <item row="14" column="1" colspan="2">
+     <widget class="QPushButton" name="saveButton">
+      <property name="text">
+       <string>Save</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QgsColorButton</class>
+   <extends>QPushButton</extends>
+   <header>qgis.gui</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

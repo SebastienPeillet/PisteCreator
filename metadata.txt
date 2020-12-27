@@ -8,7 +8,7 @@
 
 [general]
 name=PisteCreator
-qgisMinimumVersion=2.14
+qgisMinimumVersion=3.0
 description=Display along and cross slope infos when editing line layer.
 version=1.7.2
 author=Peillet Sebastien
