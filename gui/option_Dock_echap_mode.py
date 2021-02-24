@@ -21,8 +21,6 @@
  ***************************************************************************/
 """
 
-from future import standard_library
-standard_library.install_aliases()
 from builtins import str
 from builtins import range
 import os
@@ -30,7 +28,7 @@ import os
 from qgis.PyQt.QtGui import QColor
 from qgis.PyQt.QtWidgets import QDockWidget
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import pyqtSignal
+from qgis.PyQt.QtCore import pyqtSignal, QSettings
 from qgis.gui import QgsColorButton
 
 
@@ -144,8 +142,6 @@ class OptionDockEchap(QDockWidget):
             self.A_ColorButton.color().name()
         )
 
-        self.graph_widget.initPars()
-        self.graph_widget.plot([], [], [], [], 'e')
         try:
             if self.canvas.mapTool().map_tool_name == 'SlopeMapTool':
                 self.plugin.PisteCreatorTool.configChange(

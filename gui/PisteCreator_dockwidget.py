@@ -32,11 +32,12 @@ from qgis.PyQt.QtCore import pyqtSignal, QSettings
 from qgis.core import QgsProject, QgsRasterLayer
 from qgis.gui import QgsMapToolZoom
 
+from ..log import logger
 from .option_Dock import OptionDock
 from .option_Dock_echap_mode import OptionDockEchap
-from .slope_graph import SlopeGraphicsView
 
 from ..Utils import SlopeMapTool, SelectMapTool
+from .plot_view import PlotView
 
 
 class PisteCreatorDockWidget(QDockWidget):
@@ -53,7 +54,7 @@ class PisteCreatorDockWidget(QDockWidget):
         self.plugin = plugin
         self.listVectLayer()
         self.listRastLayer()
-        self.graph_widget = SlopeGraphicsView()
+        self.graph_widget = PlotView()
         self.graphLayout.addWidget(self.graph_widget, 0, 0)
         self.TracksButton.clicked.connect(self.listVectLayer)
         self.DEMButton.clicked.connect(self.listRastLayer)
@@ -61,14 +62,27 @@ class PisteCreatorDockWidget(QDockWidget):
         self.selectButton.clicked.connect(self.selectFeat)
         self.OptionButton.clicked.connect(self.openOption)
         self.canvas.layersChanged.connect(self.layersUpdate)
-        self.desacButton.setChecked(True)
-        self.desacButton.clicked.connect(lambda: self.changeAssistedMode('c'))
-        self.cloisButton.clicked.connect(lambda: self.changeAssistedMode('c'))
-        self.echapButton.clicked.connect(lambda: self.changeAssistedMode('e'))
+        settings = QSettings()
+        button_index=int(settings.value('PisteCreator/calculation_variable/mode', '0'))
+        if button_index == 0:
+            self.desacButton.setChecked(True)
+        elif button_index == 1:
+            self.cloisButton.setChecked(True)
+        else:
+            self.echapButton.setChecked(True)
+        self.modeBGroup.buttonClicked.connect(self.changeAssistedMode)
 
-    def changeAssistedMode(self,mode):
+    def changeAssistedMode(self,button):
+        settings = QSettings()
+        if button.text() == self.tr('Inactive'):
+            settings.setValue('PisteCreator/calculation_variable/mode', '0')
+        elif button.text() == self.tr('Skidding track'):
+            settings.setValue('PisteCreator/calculation_variable/mode', '1')
+        else :
+            settings.setValue('PisteCreator/calculation_variable/mode', '2')
+
         self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
-        self.graph_widget.plot([],[],[],[],mode)
+        self.updateGraph([],[],[],[])
 
     def listRastLayer(self):
         """List raster inputs for the DEM selection"""
@@ -138,7 +152,7 @@ class PisteCreatorDockWidget(QDockWidget):
         """Activate the select tools to review track graph"""
 
         self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
-        st = None
+
         # 1 Get the vector layer
         linesLayer = QgsProject.instance().mapLayersByName(self.TracksInput.currentText())[0]
         # 2 Get the raster layer
@@ -146,8 +160,8 @@ class PisteCreatorDockWidget(QDockWidget):
 
         dem = DEMLayer
         if not dem.isValid():
-            # fix_print_with_import
-            print("Layer failed to load!")
+            logger.error("Raster layer failed to load!")
+            return
 
         # 3
         settings = QSettings()
@@ -170,7 +184,7 @@ class PisteCreatorDockWidget(QDockWidget):
         """Activate the edit tool"""
 
         self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
-        ct = None
+
         # 1 Get the vector layer
         linesLayer = QgsProject.instance().mapLayersByName(self.TracksInput.currentText())[0]
         linesLayer.startEditing()
@@ -179,8 +193,8 @@ class PisteCreatorDockWidget(QDockWidget):
         
         dem = DEMLayer
         if not dem.isValid():
-            # fix_print_with_import
-            print("Layer failed to load!")
+            logger.error("Raster layer failed to load!")
+            return
 
         # 3
         settings = QSettings()
@@ -264,7 +278,7 @@ class PisteCreatorDockWidget(QDockWidget):
             assisted_mode = 'c'
         elif self.desacButton.isChecked() == True :
             assisted_mode = None
-        self.graph_widget.plot(length_list, a_slope, c_l_slope, c_r_slope, assisted_mode)
+        self.graph_widget.on_geom_update(length_list, a_slope, c_l_slope, c_r_slope)
 
     def layersUpdate(self):
         track_text = self.TracksInput.currentText()

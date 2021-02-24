@@ -145,8 +145,6 @@ class OptionDock(QDialog):
         self.settings.setValue('PisteCreator/graphical_visualisation/a_color',
             self.A_ColorButton.color().name())
 
-        self.graph_widget.initPars()
-        self.graph_widget.plot([], [], [], [], 'c')
         try:
             if self.canvas.mapTool().map_tool_name == 'SlopeMapTool':
                 self.plugin.PisteCreatorTool.configChange(

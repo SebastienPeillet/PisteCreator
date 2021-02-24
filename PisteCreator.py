@@ -28,7 +28,6 @@ from qgis.PyQt.QtCore import (QSettings,
                               QFileInfo)
 
 from qgis.PyQt.QtWidgets import (QAction,
-                                 QFileDialog,
                                  QGraphicsView,
                                  QGraphicsScene,
                                  QToolBar,
@@ -39,6 +38,8 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.gui import QgsMapToolZoom, QgsMapToolIdentify
 
 from qgis.core import QgsRasterLayer, QgsGeometry, QgsProject
+
+from .log import logger
 
 # Import the code for the DockWidget
 from .gui.PisteCreator_dockwidget import PisteCreatorDockWidget
@@ -171,6 +172,8 @@ class PisteCreator(QWidget):
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
+        logger.notice("** INIT PisteCreator")
+
         self.toolbar = QToolBar(u'PisteCreator')
         self.toolbar.setObjectName(u'PisteCreator')
 
@@ -184,7 +187,7 @@ class PisteCreator(QWidget):
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
-        print("** CLOSING PisteCreator")
+        logger.notice("** CLOSING PisteCreator")
 
         # disconnects
         self.cleanStop()
@@ -196,7 +199,7 @@ class PisteCreator(QWidget):
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
 
-        # print "** UNLOAD PisteCreator"
+        logger.notice("** UNLOAD PisteCreator")
 
         for action in self.actions:
             self.iface.removePluginMenu(
@@ -228,11 +231,10 @@ class PisteCreator(QWidget):
 
     def run(self):
         """Run method that loads and starts the plugin"""
-        print('test')
         if not self.pluginIsActive:
             self.pluginIsActive = True
 
-            # print "** STARTING PisteCreator"
+            logger.notice("** STARTING PisteCreator")
 
             # dockwidget may not exist if:
             #    first run of plugin

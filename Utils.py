@@ -206,7 +206,7 @@ class SlopeMapTool(QgsMapTool):
             iterator = self.lines_layer.getFeatures(
                 QgsFeatureRequest().setFilterFid(id))
             ft = next(iterator)
-            geom = ft.geometry().asPolyline()
+            geom = ft.geometry().asMultiPolyline()[0]
             if self.swath_display is True:
                 self.rub_rect_anchors.addGeometry(
                     QgsGeometry.fromPolylineXY(geom)
@@ -368,6 +368,10 @@ class SlopeMapTool(QgsMapTool):
                     self.edit = True
                     self.canvas.refresh()
                     self.point1coord = point
+                    self.callback(
+                        self.a_slope, self.c_left_slope, self.c_right_slope,
+                        self.length, self.line_geom, self.aslope_list,
+                        self.c_left_slope_list, self.c_right_slope_list, True)
 
                 else:
                     if valueToCheck1 is not None and valueToCheck2 is not None :
@@ -379,7 +383,7 @@ class SlopeMapTool(QgsMapTool):
                             QgsFeatureRequest().setFilterFid(id)
                         )
                         ft = next(iterator)
-                        geom = ft.geometry().asPolyline()
+                        geom = ft.geometry().asMultiPolyline()[0]
                         # Add vertices
                         geom.append(pt)
                         self.line_geom = geom
@@ -419,7 +423,7 @@ class SlopeMapTool(QgsMapTool):
                     iterator = self.lines_layer.getFeatures(
                         QgsFeatureRequest().setFilterFid(id))
                     ft = next(iterator)
-                    geom = ft.geometry().asPolyline()
+                    geom = ft.geometry().asMultiPolyline()[0]
                     # Add vertices
                     geom.append(pt)
                     self.line_geom = geom
@@ -490,7 +494,7 @@ class SlopeMapTool(QgsMapTool):
                 id = ids[-1]
                 iterator = self.lines_layer.getFeatures(QgsFeatureRequest().setFilterFid(id))
                 ft = next(iterator)
-                geom = ft.geometry().asPolyline()
+                geom = ft.geometry().asMultiPolyline()[0]
                 if self.swath_display is True:
                     self.rub_rect_anchors.addGeometry(
                         QgsGeometry.fromPolylineXY(geom)
@@ -532,7 +536,6 @@ class SlopeMapTool(QgsMapTool):
         self.rub_helppoly.reset(True)
         self.lines_layer.updateFields()
         self.lines_layer.commitChanges()
-        #self.assisted_track_option.close()
         self.callback(None, None, None, None, None, None, None, None, False)
 
     # Help to next point visualisation
@@ -691,13 +694,13 @@ class SlopeMapTool(QgsMapTool):
                     if in_construct is True and len(geom) >= 3:
                         geom.append(eP)
                         self.rub_helppoly.addGeometry(
-                            QgsGeometry.fromPolygon([geom]), None
+                            QgsGeometry.fromPolygonXY([geom]), None
                         )
                         in_construct = False
             if in_construct is True and len(geom) >= 3:
                 geom.append(eP)
                 self.rub_helppoly.addGeometry(
-                    QgsGeometry.fromPolygon([geom]), None
+                    QgsGeometry.fromPolygonXY([geom]), None
                 )
 
     def helpConstruct(self):
@@ -721,7 +724,7 @@ class SlopeMapTool(QgsMapTool):
             QgsFeatureRequest().setFilterFid(id)
         )
         ft = next(iterator)
-        geom = ft.geometry().asPolyline()
+        geom = ft.geometry().asMultiPolyline()
         # Add vertices
         geom.append(pt)
         self.line_geom = geom
@@ -766,7 +769,7 @@ class SlopeMapTool(QgsMapTool):
                 iterator = self.lines_layer.getFeatures(
                     QgsFeatureRequest().setFilterFid(id))
                 ft = next(iterator)
-                geom = ft.geometry().asPolyline()
+                geom = ft.geometry().asMultiPolyline()
                 if len(geom) > 1:
                     del geom[-1]
                     self.line_geom = geom
@@ -820,7 +823,7 @@ class SlopeMapTool(QgsMapTool):
                 iterator = self.lines_layer.getFeatures(
                     QgsFeatureRequest().setFilterFid(id))
                 ft = next(iterator)
-                geom = ft.geometry().asPolyline()
+                geom = ft.geometry().asMultiPolyline()
                 i = len(geom)
                 for i in range(0, i):
                     del geom[-1]
@@ -887,33 +890,33 @@ class SlopeMapTool(QgsMapTool):
     # RUBBERBANDS FUNCTIONS
     def rubAnchorsInit(self, id_avoid=None):
         """Load buffer rubberband from line during maptool activation"""
-        rubber = QgsRubberBand(self.canvas, True)
+        rubber = QgsRubberBand(self.canvas, geometryType=2)
 
         tracks_layer = self.lines_layer
         for track in tracks_layer.getFeatures():
             if id_avoid != track.id():
                 geom = track.geometry()
                 if geom != None :
-                    geom= geom.asPolyline()
+                    geom= geom.asMultiPolyline()[0]
                     if len(geom) > 1 :
                         rubber.addGeometry(
                             QgsGeometry.fromPolylineXY(geom)
                             .buffer(self.swath_distance, 20), None)
-        rubber.setColor(self.b_color)
+        rubber.setStrokeColor(self.b_color)
         rubber.setWidth(2)
         return rubber
 
     def rubAnchorInit(self):
         """Parameter for the buffer rubberband (after segment construction)"""
-        rubber = QgsRubberBand(self.canvas, True)
-        rubber.setColor(self.b_color)
+        rubber = QgsRubberBand(self.canvas, geometryType=2)
+        rubber.setStrokeColor(self.b_color)
         rubber.setWidth(3)
         return rubber
 
     def rubBuffCursorInit(self):
         """Parameter for the buffer rubberband around the cursor"""
-        rubber = QgsRubberBand(self.canvas, True)
-        rubber.setColor(self.b_color)
+        rubber = QgsRubberBand(self.canvas, geometryType=2)
+        rubber.setStrokeColor(self.b_color)
         rubber.setWidth(2)
         return rubber
 
@@ -985,7 +988,7 @@ class SlopeMapTool(QgsMapTool):
     def rubHelpLineInit(self):
         """Parameter for the help segment
         rubberband during segment construction"""
-        rubber = QgsRubberBand(self.canvas, False)
+        rubber = QgsRubberBand(self.canvas, geometryType=1)
         rubber.setColor(self.a_color)
         rubber.setWidth(2)
         return rubber
@@ -993,7 +996,7 @@ class SlopeMapTool(QgsMapTool):
     def rubHelpPolyInit(self):
         """Parameter for the help segment
         rubberband during segment construction"""
-        rubber = QgsRubberBand(self.canvas, True)
+        rubber = QgsRubberBand(self.canvas, geometryType=1)
         rubber.setColor(self.a_color)
         rubber.setFillColor(self.a_color)
         # rubber.setFillColor(QColor(r,g,b))
@@ -1003,14 +1006,14 @@ class SlopeMapTool(QgsMapTool):
     def rubPolylineInit(self):
         """Parameter for the segment
         rubberband during segment construction"""
-        rubber = QgsRubberBand(self.canvas, False)
+        rubber = QgsRubberBand(self.canvas, geometryType=1)
         rubber.setWidth(2)
         return rubber
 
     def rubRectInit(self):
         """Parameter for the buffer
         rubberband during segment construction"""
-        rubber = QgsRubberBand(self.canvas, True)
+        rubber = QgsRubberBand(self.canvas, geometryType=1)
         rubber.setColor(self.b_color)
         rubber.setWidth(2)
         return rubber
@@ -1525,7 +1528,7 @@ class SelectMapTool(QgsMapTool):
                 result = ft
                 break
         if result:
-            geom = result.geometry().asPolyline()
+            geom = result.geometry().asMultiPolyline()[0]
             self.rub_polyline.addGeometry(result.geometry(), self.lines_layer)
             ln = len(geom)
             id_error_list = []
@@ -1578,7 +1581,7 @@ class SelectMapTool(QgsMapTool):
 
     def rubPolylineInit(self):
         """Parameter for the segment rubberband (during segment selection)"""
-        rubber = QgsRubberBand(self.canvas, False)
+        rubber = QgsRubberBand(self.canvas, geometryType=1)
         rubber.setWidth(4)
         rubber.setColor(QColor(255, 255, 0, 255))
         return rubber
