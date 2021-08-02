@@ -1,11 +1,15 @@
-FORMS = ../PisteCreator_dockwidget_base.ui \
-../Option_dock.ui \
-../assisted_track_option.ui
+FORMS = ../gui/PisteCreator_dockwidget_base.ui \
+../gui/Option_dock.ui \
+../gui/Option_dock_truck_option.ui \
+../gui/assisted_track_option.ui
 
 SOURCES = ../PisteCreator.py \
-../option_Dock.py \
-../PisteCreator_dockwidget.py \
-../assisted_track_option.py
+../Utils.py \
+../log.py
+../gui/option_Dock.py \
+../gui/PisteCreator_dockwidget.py \
+../gui/assisted_track_option.py
+../gui/plot_view.py
 
 TRANSLATIONS = PisteCreator_fr.ts \
 
