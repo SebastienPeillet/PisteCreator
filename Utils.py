@@ -761,7 +761,7 @@ class SlopeMapTool(QgsMapTool):
         asterisk = u'\x2A'
         back_value = u'\x08'
         escape = u'\x1B'
-        if e.text() == back_value:
+        if e.text() == back_value or e.key() == Qt.Key_Backspace:
             if self.edit is True:
                 # Delete last point
                 ids = [i.id() for i in self.lines_layer.getFeatures()]
@@ -769,7 +769,7 @@ class SlopeMapTool(QgsMapTool):
                 iterator = self.lines_layer.getFeatures(
                     QgsFeatureRequest().setFilterFid(id))
                 ft = next(iterator)
-                geom = ft.geometry().asMultiPolyline()
+                geom = ft.geometry().asMultiPolyline()[0]
                 if len(geom) > 1:
                     del geom[-1]
                     self.line_geom = geom
@@ -910,6 +910,7 @@ class SlopeMapTool(QgsMapTool):
         """Parameter for the buffer rubberband (after segment construction)"""
         rubber = QgsRubberBand(self.canvas, geometryType=2)
         rubber.setStrokeColor(self.b_color)
+        rubber.setFillColor(self.b_color)
         rubber.setWidth(3)
         return rubber
 
@@ -996,8 +997,8 @@ class SlopeMapTool(QgsMapTool):
     def rubHelpPolyInit(self):
         """Parameter for the help segment
         rubberband during segment construction"""
-        rubber = QgsRubberBand(self.canvas, geometryType=1)
-        rubber.setColor(self.a_color)
+        rubber = QgsRubberBand(self.canvas, geometryType=2)
+        rubber.setStrokeColor(self.a_color)
         rubber.setFillColor(self.a_color)
         # rubber.setFillColor(QColor(r,g,b))
         rubber.setWidth(1)

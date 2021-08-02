@@ -183,12 +183,12 @@ class Axes(QGraphicsWidget):
             length = self.__max - self.__min
             step = int(float('1e'+str(len(str(length/10).split('.')[0]))))/10
             pixels_per_tick = axe_width/int(length/step)
-            mm = self.__min
-            while mm <= self.__max :
+            mm = 0
+            while mm <= length :
                 y = mm / length * (axe_width)
 
                 tick_size = 0
-                if mm == self.__min:
+                if mm == 0:
                     tick_size = 10
                 elif mm % (1*step) == 0 and pixels_per_tick > fm.width(str(step)):
                     tick_size = 5
@@ -493,7 +493,6 @@ class SlopePlot(QGraphicsWidget):
         p.setStyle(2)
         painter.setPen(p)
         tolerated_a_slope = int(settings.value("PisteCreator/graphical_visualisation/tolerated_a_slope", 10))
-        print('donnee : ', graph_height, self.__data_rect.height())
         painter.drawLine(0,
                          (1-(tolerated_a_slope/self.__data_rect.height()))*self.__item_size.height(),
                          graph_width,
