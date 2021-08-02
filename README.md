@@ -1,4 +1,3 @@
-
 # PisteCreator <img src="http://open.geoexmachina.fr/img/article/PC_icon.png"></img>
 ## ONF GUI plugins to create tracks
 
@@ -6,9 +5,7 @@ In French Guyana forest, it's not easy to lead engines deep into the wood. The r
 This tool help to avoid tilted tracks during the tracks planification.
 
 Qgis compatibility check :
-- 2.14.12
-- 2.16.0
-- 2.18.3
+- 3.16>
 
 It add a new maptool that will help the user to keep reasonable declivity when he edits the tracks layers.
 
@@ -16,8 +13,9 @@ This tool has been developped by ONF Guyane, based/adapted on the preliminary wo
 
 ## Install
 
-Download the entire folder and copy it in the following folder :
+Download the repository as zip file and load it with the QGIS Extension Manager :
   - `Users/.qgis2/python/plugins/`
+
 
 ## Interface overview
 

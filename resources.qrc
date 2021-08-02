@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/plugins/PisteCreator" >
-        <file>icon.png</file>
-    </qresource>
-</RCC>

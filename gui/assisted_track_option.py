@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- PisteCreatorDockWidget
+ assisted_track_option
                                  A QGIS plugin
  ONF UI plugins to create tracks
                              -------------------
@@ -23,23 +23,27 @@
 
 import os
 
-from PyQt4 import QtGui, uic
-from PyQt4.QtCore import pyqtSignal
+from qgis.PyQt import uic
+from qgis.PyQt.QtWidgets import QDockWidget
+from qgis.PyQt.QtCore import pyqtSignal
 
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'PisteCreator_dockwidget_base.ui'))
-
-
-class PisteCreatorDockWidget(QtGui.QDockWidget, FORM_CLASS):
+class AssistedTrackOption(QDockWidget):
 
     closingPlugin = pyqtSignal()
+    keyPressed = QtCore.pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, dock, parent=None):
         """Constructor."""
-        super(PisteCreatorDockWidget, self).__init__(parent)
+        super(AssistedTrackOption, self).__init__(parent)
+        uic.loadUi(os.path.join(os.path.dirname(__file__), 'assisted_track_option.ui'), self)
 
-        self.setupUi(self)
+        self.key = None
+
+    def keyPressEvent(self, e):
+        super(AssistedTrackOption, self).keyPressEvent(e)
+        self.key = e
+        self.keyPressed.emit()
 
     def closeEvent(self, event):
         """Clove event"""

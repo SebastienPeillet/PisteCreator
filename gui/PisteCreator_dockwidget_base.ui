@@ -6,13 +6,13 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>441</width>
+    <width>459</width>
     <height>476</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>363</width>
+    <width>459</width>
     <height>380</height>
    </size>
   </property>
@@ -79,7 +79,7 @@
        <string>Truck track</string>
       </property>
       <attribute name="buttonGroup">
-       <string notr="true">buttonGroup</string>
+       <string notr="true">modeBGroup</string>
       </attribute>
      </widget>
     </item>
@@ -89,7 +89,7 @@
        <string>Skidding track</string>
       </property>
       <attribute name="buttonGroup">
-       <string notr="true">buttonGroup</string>
+       <string notr="true">modeBGroup</string>
       </attribute>
      </widget>
     </item>
@@ -152,7 +152,7 @@
        <string>Inactive</string>
       </property>
       <attribute name="buttonGroup">
-       <string notr="true">buttonGroup</string>
+       <string notr="true">modeBGroup</string>
       </attribute>
      </widget>
     </item>
@@ -162,6 +162,6 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
+  <buttongroup name="modeBGroup"/>
  </buttongroups>
 </ui>

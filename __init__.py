@@ -24,8 +24,7 @@
 """
 
 
-# noinspection PyPep8Naming
-def classFactory(iface):  # pylint: disable=invalid-name
+def classFactory(iface):
     """Load PisteCreator class from file PisteCreator.
 
     :param iface: A QGIS interface instance.
