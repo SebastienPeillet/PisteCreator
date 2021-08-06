@@ -724,7 +724,7 @@ class SlopeMapTool(QgsMapTool):
             QgsFeatureRequest().setFilterFid(id)
         )
         ft = next(iterator)
-        geom = ft.geometry().asMultiPolyline()
+        geom = ft.geometry().asMultiPolyline()[0]
         # Add vertices
         geom.append(pt)
         self.line_geom = geom
@@ -824,8 +824,8 @@ class SlopeMapTool(QgsMapTool):
                     QgsFeatureRequest().setFilterFid(id))
                 ft = next(iterator)
                 geom = ft.geometry().asMultiPolyline()
-                i = len(geom)
-                for i in range(0, i):
+                nb = len(geom)
+                for i in range(0, nb):
                     del geom[-1]
                     del self.aslope_list[-1]
                     del self.c_left_slope_list[-1]
