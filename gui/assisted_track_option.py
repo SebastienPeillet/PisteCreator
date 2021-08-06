@@ -36,7 +36,9 @@ class AssistedTrackOption(QDockWidget):
     def __init__(self, dock, parent=None):
         """Constructor."""
         super(AssistedTrackOption, self).__init__(parent)
-        uic.loadUi(os.path.join(os.path.dirname(__file__), 'assisted_track_option.ui'), self)
+        uic.loadUi(
+            os.path.join(os.path.dirname(__file__), "assisted_track_option.ui"), self
+        )
 
         self.key = None
 

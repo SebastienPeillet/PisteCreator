@@ -13,22 +13,31 @@ import sys
 import tempfile
 import os
 
-LEVELS = {'debug':0, 'notice':1, 'warning':2, 'error':3}
+LEVELS = {"debug": 0, "notice": 1, "warning": 2, "error": 3}
+
 
 def _format(kwd, args):
-    return kwd+': '+' '.join([str(arg) for arg in args]
-            ).replace('\n', '\n'+str(kwd)+': ')+'\n'
+    return (
+        kwd
+        + ": "
+        + " ".join([str(arg) for arg in args]).replace("\n", "\n" + str(kwd) + ": ")
+        + "\n"
+    )
+
 
 class NullProgressDisplay(object):
     """ Null Progress Display """
+
     def __init__(self):
         pass
 
     def set_ratio(self, ratio):
         pass
 
+
 class ConsoleProgressDisplay(object):
     """ Console Progress Display """
+
     def __init__(self):
         if sys.stdout.isatty():
             sys.stdout.write("  0%")
@@ -41,7 +50,7 @@ class ConsoleProgressDisplay(object):
         :type ratio: float
         """
         if sys.stdout.isatty():
-            sys.stdout.write("\b"*4+"% 3d%%"%(int(ratio*100)))
+            sys.stdout.write("\b" * 4 + "% 3d%%" % (int(ratio * 100)))
             sys.stdout.flush()
 
     def __del__(self):
@@ -51,8 +60,10 @@ class ConsoleProgressDisplay(object):
             sys.stdout.write("100%\n")
         sys.stdout.flush()
 
+
 class QGisProgressDisplay(object):
     """QProgressBar wrapper to provide minimal interface"""
+
     def __init__(self):
         """Constructor"""
         from qgis.PyQt.QtWidgets import QProgressBar
@@ -60,7 +71,7 @@ class QGisProgressDisplay(object):
 
         self.__widget = QProgressBar()
         self.__widget.setMaximum(100)
-        self.__widget.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
+        self.__widget.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
     def widget(self):
         """ Return the QProgressBar 
@@ -76,17 +87,27 @@ class QGisProgressDisplay(object):
         :param ratio: ratio of calculated dates
         :type ratio: float
         """
-        self.__widget.setValue(int(ratio*100))
+        self.__widget.setValue(int(ratio * 100))
+
 
 class Logger(object):
     """ PisteCreator Logger"""
-    def __init__(self, 
-            file_=os.path.join(tempfile.gettempdir(), 
-                (os.environ.get('USERNAME') if 'USERNAME' in os.environ else os.environ.get('USER'))+'_PisteCreator.log'),
-            iface=None, 
-            level='notice', 
-            enable_console=False
-            ):
+
+    def __init__(
+        self,
+        file_=os.path.join(
+            tempfile.gettempdir(),
+            (
+                os.environ.get("USERNAME")
+                if "USERNAME" in os.environ
+                else os.environ.get("USER")
+            )
+            + "_PisteCreator.log",
+        ),
+        iface=None,
+        level="notice",
+        enable_console=False,
+    ):
         """Constructor
 
         :param file: log file path
@@ -100,7 +121,7 @@ class Logger(object):
         """
         assert level in LEVELS
 
-        self.__logfile = open(file_, 'w+') if file_ else None
+        self.__logfile = open(file_, "w+") if file_ else None
         self.__iface = iface
         self.__level = level
         self.__enable_console = enable_console
@@ -134,49 +155,51 @@ class Logger(object):
 
     def error(self, *args):
         """ Write error"""
-        if LEVELS['error'] >= LEVELS[self.__level]:
-            message = _format('', args)
+        if LEVELS["error"] >= LEVELS[self.__level]:
+            message = _format("", args)
             if self.__iface:
-                self.__iface.messageBar().pushCritical('PisteCreator', _format('', args))
+                self.__iface.messageBar().pushCritical(
+                    "PisteCreator", _format("", args)
+                )
             if self.__logfile:
-                self.__logfile.write(_format('error', args))
+                self.__logfile.write(_format("error", args))
                 self.__logfile.flush()
             if self.__enable_console and sys.stdout is not None:
-                sys.stdout.write(_format('error', args))
+                sys.stdout.write(_format("error", args))
 
     def warning(self, *args):
         """ Write warning"""
-        if LEVELS['warning'] >= LEVELS[self.__level]:
-            message = _format('', args)
+        if LEVELS["warning"] >= LEVELS[self.__level]:
+            message = _format("", args)
             if self.__iface:
-                self.__iface.messageBar().pushWarning('PisteCreator', message)
+                self.__iface.messageBar().pushWarning("PisteCreator", message)
             if self.__logfile:
-                self.__logfile.write(_format('warning', args))
+                self.__logfile.write(_format("warning", args))
                 self.__logfile.flush()
             if self.__enable_console and sys.stdout is not None:
-                sys.stdout.write(_format('warning', args))
+                sys.stdout.write(_format("warning", args))
 
     def notice(self, *args):
         """ Write notation"""
-        if LEVELS['notice'] >= LEVELS[self.__level]:
-            message = _format('', args)
+        if LEVELS["notice"] >= LEVELS[self.__level]:
+            message = _format("", args)
             # we log too much notice in PisteCreator, we don't want theme in the message bar
-            #if self.__iface:
+            # if self.__iface:
             #    self.__iface.messageBar().pushInfo('PisteCreator', message)
             if self.__logfile:
-                self.__logfile.write(_format('notice', args))
+                self.__logfile.write(_format("notice", args))
                 self.__logfile.flush()
             if self.__enable_console and sys.stdout is not None:
-                sys.stdout.write(_format('notice', args))
+                sys.stdout.write(_format("notice", args))
 
     def debug(self, *args):
         """ Write debug info"""
-        if LEVELS['debug'] >= LEVELS[self.__level]:
+        if LEVELS["debug"] >= LEVELS[self.__level]:
             if self.__logfile:
-                self.__logfile.write(_format('debug', args))
+                self.__logfile.write(_format("debug", args))
                 self.__logfile.flush()
             if self.__enable_console and sys.stdout is not None:
-                sys.stdout.write(_format('debug', args))
+                sys.stdout.write(_format("debug", args))
 
     def progress(self, message):
         """ Write progress
@@ -184,17 +207,19 @@ class Logger(object):
         :param message: message to write
         :type message: string"""
         from qgis.core import Qgis
+
         if self.__iface:
             progressMessageBar = self.__iface.messageBar().createMessage(message)
             progress = QGisProgressDisplay()
             progressMessageBar.layout().addWidget(progress.widget())
-            self.__iface.messageBar().pushWidget(progressMessageBar,Qgis.Info, duration=1)
+            self.__iface.messageBar().pushWidget(
+                progressMessageBar, Qgis.Info, duration=1
+            )
             return progress
         if self.__enable_console:
-            sys.stdout.write("Progress: %s "%(message))
+            sys.stdout.write("Progress: %s " % (message))
             return ConsoleProgressDisplay()
         return NullProgressDisplay()
 
 
 logger = Logger()
-

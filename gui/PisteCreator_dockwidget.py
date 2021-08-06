@@ -26,7 +26,7 @@ import os
 import math
 
 from qgis.PyQt import uic
-from qgis.PyQt.QtWidgets import QDockWidget 
+from qgis.PyQt.QtWidgets import QDockWidget
 from qgis.PyQt.QtCore import pyqtSignal, QSettings
 
 from qgis.core import QgsProject, QgsRasterLayer
@@ -47,7 +47,10 @@ class PisteCreatorDockWidget(QDockWidget):
     def __init__(self, plugin, iface, parent=None):
         """Constructor."""
         super(PisteCreatorDockWidget, self).__init__(parent)
-        uic.loadUi(os.path.join(os.path.dirname(__file__), 'PisteCreator_dockwidget_base.ui'), self)
+        uic.loadUi(
+            os.path.join(os.path.dirname(__file__), "PisteCreator_dockwidget_base.ui"),
+            self,
+        )
 
         self.iface = iface
         self.canvas = self.iface.mapCanvas()
@@ -63,7 +66,9 @@ class PisteCreatorDockWidget(QDockWidget):
         self.OptionButton.clicked.connect(self.openOption)
         self.canvas.layersChanged.connect(self.layersUpdate)
         settings = QSettings()
-        button_index=int(settings.value('PisteCreator/calculation_variable/mode', '0'))
+        button_index = int(
+            settings.value("PisteCreator/calculation_variable/mode", "0")
+        )
         if button_index == 0:
             self.desacButton.setChecked(True)
         elif button_index == 1:
@@ -72,17 +77,17 @@ class PisteCreatorDockWidget(QDockWidget):
             self.echapButton.setChecked(True)
         self.modeBGroup.buttonClicked.connect(self.changeAssistedMode)
 
-    def changeAssistedMode(self,button):
+    def changeAssistedMode(self, button):
         settings = QSettings()
-        if button.text() == self.tr('Inactive'):
-            settings.setValue('PisteCreator/calculation_variable/mode', '0')
-        elif button.text() == self.tr('Skidding track'):
-            settings.setValue('PisteCreator/calculation_variable/mode', '1')
-        else :
-            settings.setValue('PisteCreator/calculation_variable/mode', '2')
+        if button.text() == self.tr("Inactive"):
+            settings.setValue("PisteCreator/calculation_variable/mode", "0")
+        elif button.text() == self.tr("Skidding track"):
+            settings.setValue("PisteCreator/calculation_variable/mode", "1")
+        else:
+            settings.setValue("PisteCreator/calculation_variable/mode", "2")
 
         self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
-        self.updateGraph([],[],[],[])
+        self.updateGraph([], [], [], [])
 
     def listRastLayer(self):
         """List raster inputs for the DEM selection"""
@@ -119,17 +124,15 @@ class PisteCreatorDockWidget(QDockWidget):
             index += 1
         self.TracksInput.addItems(layer_list)
 
-    def displayXY(
-        self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw
-    ):
+    def displayXY(self, a, b, c, d, geom, a_slope, c_l_slope, c_r_slope, graph_draw):
         """Check output values from the edit maptool (callback function)"""
 
         if a is not None:
-            self.AlongResult.setText(str(a)+'%')
+            self.AlongResult.setText(str(a) + "%")
         if b is not None:
-            self.LeftCrossResult.setText(str(b)+'%')
+            self.LeftCrossResult.setText(str(b) + "%")
         if c is not None:
-            self.RightCrossResult.setText(str(c)+'%')
+            self.RightCrossResult.setText(str(c) + "%")
         if d is not None:
             self.LengthResult.setText(str(d))
         if graph_draw is True:
@@ -137,13 +140,15 @@ class PisteCreatorDockWidget(QDockWidget):
 
     def openOption(self):
         """Open the options box"""
-        if self.echapButton.isChecked() == True :
-            self.optionDock = OptionDockEchap(self.plugin, self.graph_widget, self.canvas)
+        if self.echapButton.isChecked() == True:
+            self.optionDock = OptionDockEchap(
+                self.plugin, self.graph_widget, self.canvas
+            )
             self.optionDock.show()
-        elif self.cloisButton.isChecked() == True :
+        elif self.cloisButton.isChecked() == True:
             self.optionDock = OptionDock(self.plugin, self.graph_widget, self.canvas)
             self.optionDock.show()
-        elif self.desacButton.isChecked() == True :
+        elif self.desacButton.isChecked() == True:
             self.optionDock = OptionDock(self.plugin, self.graph_widget, self.canvas)
             self.optionDock.show()
         return None
@@ -154,7 +159,9 @@ class PisteCreatorDockWidget(QDockWidget):
         self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
 
         # 1 Get the vector layer
-        linesLayer = QgsProject.instance().mapLayersByName(self.TracksInput.currentText())[0]
+        linesLayer = QgsProject.instance().mapLayersByName(
+            self.TracksInput.currentText()
+        )[0]
         # 2 Get the raster layer
         DEMLayer = QgsProject.instance().mapLayersByName(self.DEMInput.currentText())[0]
 
@@ -165,18 +172,22 @@ class PisteCreatorDockWidget(QDockWidget):
 
         # 3
         settings = QSettings()
-        side_distance = int(settings.value(
-            'PisteCreator/calculation_variable/side_distance', 10
-        ))
-        interpolate_act = bool(settings.value(
-            'PisteCreator/calculation_variable/interpolate_act', True
-        ))
+        side_distance = int(
+            settings.value("PisteCreator/calculation_variable/side_distance", 10)
+        )
+        interpolate_act = bool(
+            settings.value("PisteCreator/calculation_variable/interpolate_act", True)
+        )
 
         # 4 Activate Maptools
 
         self.PisteCreatorTool = SelectMapTool(
-            self.iface,  self.updateGraph, linesLayer,
-            dem, side_distance, interpolate_act
+            self.iface,
+            self.updateGraph,
+            linesLayer,
+            dem,
+            side_distance,
+            interpolate_act,
         )
         self.iface.mapCanvas().setMapTool(self.PisteCreatorTool)
 
@@ -186,11 +197,13 @@ class PisteCreatorDockWidget(QDockWidget):
         self.iface.mapCanvas().setMapTool(QgsMapToolZoom(self.canvas, False))
 
         # 1 Get the vector layer
-        linesLayer = QgsProject.instance().mapLayersByName(self.TracksInput.currentText())[0]
+        linesLayer = QgsProject.instance().mapLayersByName(
+            self.TracksInput.currentText()
+        )[0]
         linesLayer.startEditing()
         # 2 Get the raster layer
         DEMLayer = QgsProject.instance().mapLayersByName(self.DEMInput.currentText())[0]
-        
+
         dem = DEMLayer
         if not dem.isValid():
             logger.error("Raster layer failed to load!")
@@ -198,60 +211,77 @@ class PisteCreatorDockWidget(QDockWidget):
 
         # 3
         settings = QSettings()
-        side_distance = int(settings.value(
-            'PisteCreator/calculation_variable/side_distance', 6
-        ))
-        tolerated_a_slope = int(settings.value(
-            'PisteCreator/graphical_visualisation/tolerated_a_slope', 10
-        ))
-        tolerated_c_slope = int(settings.value(
-            'PisteCreator/graphical_visualisation/tolerated_c_slope', 4
-        ))
-        max_length = int(settings.value(
-            'PisteCreator/graphical_visualisation/max_length', 50
-        ))
-        max_length_hold = bool(settings.value(
-            'PisteCreator/graphical_visualisation/max_length_hold', False
-        ))
-        swath_distance = int(settings.value(
-            'PisteCreator/graphical_visualisation/swath_distance', 30
-        ))
-        swath_display = bool(settings.value(
-            'PisteCreator/graphical_visualisation/swath_display', True
-        ))
-        interpolate_act = bool(settings.value(
-            'PisteCreator/calculation_variable/interpolate_act', True
-        ))
+        side_distance = int(
+            settings.value("PisteCreator/calculation_variable/side_distance", 6)
+        )
+        tolerated_a_slope = int(
+            settings.value("PisteCreator/graphical_visualisation/tolerated_a_slope", 10)
+        )
+        tolerated_c_slope = int(
+            settings.value("PisteCreator/graphical_visualisation/tolerated_c_slope", 4)
+        )
+        max_length = int(
+            settings.value("PisteCreator/graphical_visualisation/max_length", 50)
+        )
+        max_length_hold = bool(
+            settings.value(
+                "PisteCreator/graphical_visualisation/max_length_hold", False
+            )
+        )
+        swath_distance = int(
+            settings.value("PisteCreator/graphical_visualisation/swath_distance", 30)
+        )
+        swath_display = bool(
+            settings.value("PisteCreator/graphical_visualisation/swath_display", True)
+        )
+        interpolate_act = bool(
+            settings.value("PisteCreator/calculation_variable/interpolate_act", True)
+        )
         t_color = settings.value(
-            'PisteCreator/graphical_visualisation/t_color', '#00d003'
+            "PisteCreator/graphical_visualisation/t_color", "#00d003"
         )
         f_color = settings.value(
-            'PisteCreator/graphical_visualisation/f_color', '#ff0000'
+            "PisteCreator/graphical_visualisation/f_color", "#ff0000"
         )
         tl_color = settings.value(
-            'PisteCreator/graphical_visualisation/tl_color', '#236433'
+            "PisteCreator/graphical_visualisation/tl_color", "#236433"
         )
         fl_color = settings.value(
-            'PisteCreator/graphical_visualisation/fl_color', '#b80000'
+            "PisteCreator/graphical_visualisation/fl_color", "#b80000"
         )
         b_color = settings.value(
-            'PisteCreator/graphical_visualisation/b_color', '#0fff33'
+            "PisteCreator/graphical_visualisation/b_color", "#0fff33"
         )
         a_color = settings.value(
-            'PisteCreator/graphical_visualisation/a_color', '#48b0d2'
+            "PisteCreator/graphical_visualisation/a_color", "#48b0d2"
         )
-        if self.echapButton.isChecked() == True :
-            assisted_mode = 'e'
-        elif self.cloisButton.isChecked() == True :
-            assisted_mode = 'c'
-        elif self.desacButton.isChecked() == True :
+        if self.echapButton.isChecked() == True:
+            assisted_mode = "e"
+        elif self.cloisButton.isChecked() == True:
+            assisted_mode = "c"
+        elif self.desacButton.isChecked() == True:
             assisted_mode = None
         # 4 Activate Maptools
         self.PisteCreatorTool = SlopeMapTool(
-            self.iface,  self.displayXY, linesLayer, dem, side_distance,
-            tolerated_a_slope, tolerated_c_slope, max_length, swath_distance,
-            max_length_hold, swath_display, interpolate_act, t_color, f_color,
-            tl_color, fl_color, b_color, a_color, assisted_mode
+            self.iface,
+            self.displayXY,
+            linesLayer,
+            dem,
+            side_distance,
+            tolerated_a_slope,
+            tolerated_c_slope,
+            max_length,
+            swath_distance,
+            max_length_hold,
+            swath_display,
+            interpolate_act,
+            t_color,
+            f_color,
+            tl_color,
+            fl_color,
+            b_color,
+            a_color,
+            assisted_mode,
         )
         self.iface.mapCanvas().setMapTool(self.PisteCreatorTool)
 
@@ -263,20 +293,20 @@ class PisteCreatorDockWidget(QDockWidget):
         length_list = [0]
         len_geom = len(geom)
         if len_geom != 0:
-            for i in range(0, len_geom-1):
+            for i in range(0, len_geom - 1):
                 if i + 1 <= len_geom:
                     pt1 = geom[i]
-                    pt2 = geom[i+1]
+                    pt2 = geom[i + 1]
                     azimuth = pt1.azimuth(pt2)
                     length += math.sqrt(pt1.sqrDist(pt2))
                     length_list.append(length)
         else:
             del length_list[-1]
-        if self.echapButton.isChecked() == True :
-            assisted_mode = 'e'
-        elif self.cloisButton.isChecked() == True :
-            assisted_mode = 'c'
-        elif self.desacButton.isChecked() == True :
+        if self.echapButton.isChecked() == True:
+            assisted_mode = "e"
+        elif self.cloisButton.isChecked() == True:
+            assisted_mode = "c"
+        elif self.desacButton.isChecked() == True:
             assisted_mode = None
         self.graph_widget.on_geom_update(length_list, a_slope, c_l_slope, c_r_slope)
 
@@ -287,9 +317,9 @@ class PisteCreatorDockWidget(QDockWidget):
         self.listVectLayer()
         track_ind = self.TracksInput.findText(track_text)
         dem_ind = self.DEMInput.findText(dem_text)
-        if track_ind != -1 :
+        if track_ind != -1:
             self.TracksInput.setCurrentIndex(track_ind)
-        if dem_ind != -1 :
+        if dem_ind != -1:
             self.DEMInput.setCurrentIndex(dem_ind)
         return None
 

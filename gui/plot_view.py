@@ -35,17 +35,20 @@ from PyQt5.QtWidgets import (
     QStatusBar,
     QVBoxLayout,
 )
-from qgis.core import (QgsFeatureRenderer,
-                      QgsMapToPixel,
-                      QgsRenderContext,
-                      QgsGeometry,
-                      QgsFields,
-                      QgsFeature,
-                      QgsRectangle)
+from qgis.core import (
+    QgsFeatureRenderer,
+    QgsMapToPixel,
+    QgsRenderContext,
+    QgsGeometry,
+    QgsFields,
+    QgsFeature,
+    QgsRectangle,
+)
 
 POINT_RENDERER = 0
 LINE_RENDERER = 1
 POLYGON_RENDERER = 2
+
 
 class Axes(QGraphicsWidget):
     def __init__(self, vertical=False, size=QSizeF(200, 100), parent=None):
@@ -130,16 +133,16 @@ class Axes(QGraphicsWidget):
             painter.rotate(-90.0)
             painter.translate(-width / 2, -height / 2)
             offset = 35
-            axe_height = width-offset
+            axe_height = width - offset
             axe_x = 50
-            painter.drawLine(offset, axe_x, axe_height+10, axe_x)
-            painter.drawLine(axe_height+5, axe_x-3, axe_height+10,axe_x)
-            painter.drawLine(axe_height+10, axe_x, axe_height+5,axe_x+3)
+            painter.drawLine(offset, axe_x, axe_height + 10, axe_x)
+            painter.drawLine(axe_height + 5, axe_x - 3, axe_height + 10, axe_x)
+            painter.drawLine(axe_height + 10, axe_x, axe_height + 5, axe_x + 3)
 
             pixels_per_tick = self.__max / axe_height
             mm = 0
             while mm <= self.__max:
-                y = mm / self.__max * (axe_height-offset) + offset
+                y = mm / self.__max * (axe_height - offset) + offset
 
                 tick_size = 0
                 if mm == 0:
@@ -150,7 +153,7 @@ class Axes(QGraphicsWidget):
                     tick_size = 5
                 elif pixels_per_tick < 0.25:
                     tick_size = 2
-                elif mm %50 == 0 and pixels_per_tick > 1:
+                elif mm % 50 == 0 and pixels_per_tick > 1:
                     tick_size = 10
 
                 if tick_size > 0:
@@ -158,45 +161,48 @@ class Axes(QGraphicsWidget):
                     painter.drawLine(y, axe_x - tick_size, y, axe_x)
                     if tick_size == 10:
                         s = str(mm)
-                        x = (axe_x - tick_size - 2)
+                        x = axe_x - tick_size - 2
                         painter.drawText(y - fm.width(s) / 2, x, s)
                     elif pixels_per_tick < 0.25 and tick_size == 5:
                         s = str(mm)
-                        x = (axe_x - tick_size - 2)
+                        x = axe_x - tick_size - 2
                         painter.drawText(y - fm.width(s) / 2, x, s)
                 mm += 5
 
-
             # add "..." if needed
-            title = fm.elidedText('Slope percent', Qt.ElideRight, width)
+            title = fm.elidedText("Slope percent", Qt.ElideRight, width)
             w1 = int((width - fm.width(title)) / 2)
             y = int(20)
             painter.drawText(w1, y, title)
-        else :
+        else:
             offset = 50
-            axe_width = width-offset
+            axe_width = width - offset
             axe_y = 0
-            painter.drawLine(0, axe_y, axe_width+10, axe_y)
-            painter.drawLine(axe_width+5, axe_y-3, axe_width+10,axe_y)
-            painter.drawLine(axe_width+10, axe_y, axe_width+5,axe_y+3)
+            painter.drawLine(0, axe_y, axe_width + 10, axe_y)
+            painter.drawLine(axe_width + 5, axe_y - 3, axe_width + 10, axe_y)
+            painter.drawLine(axe_width + 10, axe_y, axe_width + 5, axe_y + 3)
 
             length = self.__max - self.__min
-            step = int(float('1e'+str(len(str(length/10).split('.')[0]))))/10
-            pixels_per_tick = axe_width/int(length/step)
+            step = int(float("1e" + str(len(str(length / 10).split(".")[0])))) / 10
+            pixels_per_tick = axe_width / int(length / step)
             mm = 0
-            while mm <= length :
+            while mm <= length:
                 y = mm / length * (axe_width)
 
                 tick_size = 0
                 if mm == 0:
                     tick_size = 10
-                elif mm % (1*step) == 0 and pixels_per_tick > fm.width(str(step)):
+                elif mm % (1 * step) == 0 and pixels_per_tick > fm.width(str(step)):
                     tick_size = 5
-                elif mm % (2*step) == 0 and pixels_per_tick > fm.width(str(step))/2:
+                elif mm % (2 * step) == 0 and pixels_per_tick > fm.width(str(step)) / 2:
                     tick_size = 10
-                elif mm % (5*step) == 0 and pixels_per_tick < fm.width(str(step))/2 and pixels_per_tick > fm.width(str(step))/5:
+                elif (
+                    mm % (5 * step) == 0
+                    and pixels_per_tick < fm.width(str(step)) / 2
+                    and pixels_per_tick > fm.width(str(step)) / 5
+                ):
                     tick_size = 10
-                elif mm % (10*step) == 0:
+                elif mm % (10 * step) == 0:
                     tick_size = 10
 
                 if tick_size > 0:
@@ -204,22 +210,21 @@ class Axes(QGraphicsWidget):
                     painter.drawLine(y, axe_y + tick_size, y, axe_y)
                     if tick_size == 10:
                         s = str(int(mm))
-                        x = (axe_y + tick_size + fm.ascent() + 2)
+                        x = axe_y + tick_size + fm.ascent() + 2
                         painter.drawText(y - fm.width(s) / 2, x, s)
                     elif pixels_per_tick > fm.width(str(step)) and tick_size == 5:
                         s = str(int(mm))
-                        x = (axe_y + tick_size + fm.ascent() + 2)
+                        x = axe_y + tick_size + fm.ascent() + 2
                         painter.drawText(y - fm.width(s) / 2, x, s)
                 if mm == self.__min:
-                    mm = int(mm/step)*step
-                mm += step            
+                    mm = int(mm / step) * step
+                mm += step
 
             # add "..." if needed
-            title = fm.elidedText('Length', Qt.ElideRight, width)
+            title = fm.elidedText("Length", Qt.ElideRight, width)
             w1 = int((width - offset - fm.width(title)) / 2)
             y = int(33)
             painter.drawText(w1, y, title)
-
 
         painter.setBrush(old_brush)
         painter.setPen(old_pen)
@@ -231,7 +236,8 @@ class Axes(QGraphicsWidget):
         :type event: QEvent
         """
         pos = event.scenePos()
-        
+
+
 class SlopePlot(QGraphicsWidget):
     def __init__(self, size=QSizeF(400, 200), render_type=LINE_RENDERER, parent=None):
         QGraphicsWidget.__init__(self, parent)
@@ -240,18 +246,17 @@ class SlopePlot(QGraphicsWidget):
         self.__a_values = []
         self.__cl_values = []
         self.__cr_values = []
-        if not self.__x_values :
-            self.set_data_window(QRectF(0,
-                                 0,
-                                 100,
-                                 100
-                                ))
+        if not self.__x_values:
+            self.set_data_window(QRectF(0, 0, 100, 100))
         else:
-            self.set_data_window(QRectF(0,
-                                 0,
-                                 max(self.__x_values),
-                                 max(self.__a_values + self.__cl_values + self.__cr_values)
-                                ))
+            self.set_data_window(
+                QRectF(
+                    0,
+                    0,
+                    max(self.__x_values),
+                    max(self.__a_values + self.__cl_values + self.__cr_values),
+                )
+            )
 
         self.__render_type = render_type
         self.__default_a_renderers = [
@@ -277,34 +282,47 @@ class SlopePlot(QGraphicsWidget):
         symbol = self.__default_c_renderers[2].symbol()
         symbol.symbolLayers()[0].setStrokeWidth(1.0)
 
-        self.__default_a_renderers[self.__render_type].symbol().setColor(QColor('#ff0000'))
+        self.__default_a_renderers[self.__render_type].symbol().setColor(
+            QColor("#ff0000")
+        )
         self.__a_renderer = self.__default_a_renderers[self.__render_type]
-        self.__default_c_renderers[self.__render_type].symbol().setColor(QColor('#00ff00'))
+        self.__default_c_renderers[self.__render_type].symbol().setColor(
+            QColor("#00ff00")
+        )
         self.__c_renderer = self.__default_c_renderers[self.__render_type]
 
     def set_data(self, x_values, a_values, cl_values, cr_values):
         settings = QSettings()
-        tolerated_a_slope = int(settings.value("PisteCreator/graphical_visualisation/tolerated_a_slope", 10))
-        tolerated_c_slope = int(settings.value("PisteCreator/graphical_visualisation/tolerated_c_slope", 10))
+        tolerated_a_slope = int(
+            settings.value("PisteCreator/graphical_visualisation/tolerated_a_slope", 10)
+        )
+        tolerated_c_slope = int(
+            settings.value("PisteCreator/graphical_visualisation/tolerated_c_slope", 10)
+        )
         if x_values:
             self.__x_values = x_values
             self.__a_values = a_values
             self.__cl_values = cl_values
             self.__cr_values = cr_values
             self.set_width_x(max(self.__x_values))
-            self.set_height_y(max(a_values + cl_values + cr_values + [tolerated_a_slope, tolerated_c_slope])+5)
+            self.set_height_y(
+                max(
+                    a_values
+                    + cl_values
+                    + cr_values
+                    + [tolerated_a_slope, tolerated_c_slope]
+                )
+                + 5
+            )
         else:
             self.__x_values = []
             self.__a_values = []
             self.__cl_values = []
             self.__cr_values = []
-            if not self.__x_values :
-                self.set_data_window(QRectF(0,
-                                     0,
-                                     100,
-                                     max([tolerated_a_slope, tolerated_c_slope])+5
-                                    ))
-        
+            if not self.__x_values:
+                self.set_data_window(
+                    QRectF(0, 0, 100, max([tolerated_a_slope, tolerated_c_slope]) + 5)
+                )
 
     @staticmethod
     def qgis_render_context(painter, width, height):
@@ -421,7 +439,6 @@ class SlopePlot(QGraphicsWidget):
         if self.__data_rect is not None:
             h = max_y - self.__data_rect.y()
             self.__data_rect.setHeight(h)
-    
 
     def set_data_window(self, window):
         """ Set data_window
@@ -451,7 +468,10 @@ class SlopePlot(QGraphicsWidget):
         old_brush = painter.brush()
         p = QPen()
         b = QBrush()
-        width, height = int(self.boundingRect().width()), int(self.boundingRect().height())
+        width, height = (
+            int(self.boundingRect().width()),
+            int(self.boundingRect().height()),
+        )
         b.setColor(QColor("#ffffff"))
         b.setStyle(Qt.SolidPattern)
         painter.setBrush(b)
@@ -484,39 +504,61 @@ class SlopePlot(QGraphicsWidget):
         settings = QSettings()
         y_offset = 35
         x_offset = 50
-        graph_height = self.height()-y_offset
+        graph_height = self.height() - y_offset
         graph_width = self.width()
         p = QPen()
         b = QBrush()
-        p.setColor(QColor('#000000'))
+        p.setColor(QColor("#000000"))
         p.setWidth(1)
         p.setStyle(2)
         painter.setPen(p)
-        tolerated_a_slope = int(settings.value("PisteCreator/graphical_visualisation/tolerated_a_slope", 10))
-        painter.drawLine(0,
-                         (1-(tolerated_a_slope/self.__data_rect.height()))*self.__item_size.height(),
-                         graph_width,
-                         (1-(tolerated_a_slope/self.__data_rect.height()))*self.__item_size.height() 
-                        )
-        if int(settings.value('PisteCreator/calculation_variable/mode', '0')) != 2:
+        tolerated_a_slope = int(
+            settings.value("PisteCreator/graphical_visualisation/tolerated_a_slope", 10)
+        )
+        painter.drawLine(
+            0,
+            (1 - (tolerated_a_slope / self.__data_rect.height()))
+            * self.__item_size.height(),
+            graph_width,
+            (1 - (tolerated_a_slope / self.__data_rect.height()))
+            * self.__item_size.height(),
+        )
+        if int(settings.value("PisteCreator/calculation_variable/mode", "0")) != 2:
             p.setStyle(3)
             painter.setPen(p)
-            tolerated_c_slope = int(settings.value("PisteCreator/graphical_visualisation/tolerated_c_slope", 4))
-            painter.drawLine(0,
-                             (1-(tolerated_c_slope/self.__data_rect.height()))*self.__item_size.height(),
-                             graph_width,
-                             (1-(tolerated_c_slope/self.__data_rect.height()))*self.__item_size.height(),
-                            )
+            tolerated_c_slope = int(
+                settings.value(
+                    "PisteCreator/graphical_visualisation/tolerated_c_slope", 4
+                )
+            )
+            painter.drawLine(
+                0,
+                (1 - (tolerated_c_slope / self.__data_rect.height()))
+                * self.__item_size.height(),
+                graph_width,
+                (1 - (tolerated_c_slope / self.__data_rect.height()))
+                * self.__item_size.height(),
+            )
 
         painter.setBrush(old_brush)
         painter.setPen(old_pen)
 
-        self.line_rendering(painter,self.__x_values,self.__a_values, self.__a_renderer)
-        self.line_rendering(painter,self.__x_values,self.__cr_values, self.__c_renderer)
-        self.line_rendering(painter,self.__x_values,self.__cl_values, self.__c_renderer)
+        self.line_rendering(
+            painter, self.__x_values, self.__a_values, self.__a_renderer
+        )
+        self.line_rendering(
+            painter, self.__x_values, self.__cr_values, self.__c_renderer
+        )
+        self.line_rendering(
+            painter, self.__x_values, self.__cl_values, self.__c_renderer
+        )
 
-    def line_rendering(self, painter, x_values, y_values, renderer, render_type=LINE_RENDERER):
-        imin_x = bisect.bisect_left(sorted(x_values), self.__data_rect.x(), hi=len(x_values))
+    def line_rendering(
+        self, painter, x_values, y_values, renderer, render_type=LINE_RENDERER
+    ):
+        imin_x = bisect.bisect_left(
+            sorted(x_values), self.__data_rect.x(), hi=len(x_values)
+        )
 
         imax_x = bisect.bisect_right(
             sorted(x_values), self.__data_rect.right(), hi=len(x_values)
@@ -525,7 +567,11 @@ class SlopePlot(QGraphicsWidget):
         # For lines and polygons, retain also one value before the min and one after the max
         # so that lines do not appear truncated
         # Do this only if we have at least one point to render within out rect
-        if imin_x > 0 and imin_x < len(x_values) and x_values[imin_x] >= self.__data_rect.x():
+        if (
+            imin_x > 0
+            and imin_x < len(x_values)
+            and x_values[imin_x] >= self.__data_rect.x()
+        ):
             # FIXME add a test to avoid adding a point too "far away" ?
             imin_x -= 1
         if imax_x < len(x_values) - 1 and x_values[imax_x] <= self.__data_rect.right():
@@ -569,7 +615,9 @@ class SlopePlot(QGraphicsWidget):
             wkb[1] = 2  # linestring
             size_view = np.ndarray(buffer=wkb, dtype="int32", offset=5, shape=(1,))
             size_view[0] = n_points
-            coords_view = np.ndarray(buffer=wkb, dtype="float64", offset=9, shape=(n_points, 2))
+            coords_view = np.ndarray(
+                buffer=wkb, dtype="float64", offset=9, shape=(n_points, 2)
+            )
             coords_view[:, 0] = xx[:]
             coords_view[:, 1] = yy[:]
         elif render_type == POINT_RENDERER:
@@ -590,13 +638,21 @@ class SlopePlot(QGraphicsWidget):
             size_view = np.ndarray(buffer=wkb, dtype="int32", offset=5, shape=(1,))
             size_view[0] = n_points
             coords_view = np.ndarray(
-                buffer=wkb, dtype="float64", offset=9 + 5, shape=(n_points, 2), strides=(16 + 5, 8)
+                buffer=wkb,
+                dtype="float64",
+                offset=9 + 5,
+                shape=(n_points, 2),
+                strides=(16 + 5, 8),
             )
             coords_view[:, 0] = xx[:]
             coords_view[:, 1] = yy[:]
             # header of each point
             h_view = np.ndarray(
-                buffer=wkb, dtype="uint8", offset=9, shape=(n_points, 2), strides=(16 + 5, 1)
+                buffer=wkb,
+                dtype="uint8",
+                offset=9,
+                shape=(n_points, 2),
+                strides=(16 + 5, 1),
             )
             h_view[:, 0] = 1  # endianness
             h_view[:, 1] = 1  # point
@@ -619,12 +675,17 @@ class SlopePlot(QGraphicsWidget):
             wkb[5] = 1  # number of rings
             size_view = np.ndarray(buffer=wkb, dtype="int32", offset=9, shape=(1,))
             size_view[0] = n_points + 2
-            coords_view = np.ndarray(buffer=wkb, dtype="float64", offset=9 + 4, shape=(n_points, 2))
+            coords_view = np.ndarray(
+                buffer=wkb, dtype="float64", offset=9 + 4, shape=(n_points, 2)
+            )
             coords_view[:, 0] = xx[:]
             coords_view[:, 1] = yy[:]
             # two extra points
             extra_coords = np.ndarray(
-                buffer=wkb, dtype="float64", offset=8 * 2 * n_points + 9 + 4, shape=(2, 2)
+                buffer=wkb,
+                dtype="float64",
+                offset=8 * 2 * n_points + 9 + 4,
+                shape=(2, 2),
             )
             if (
                 self.__x_orientation == ORIENTATION_LEFT_TO_RIGHT
@@ -648,22 +709,30 @@ class SlopePlot(QGraphicsWidget):
         geom = QgsGeometry()
         geom.fromWkb(wkb.tobytes())
 
-        painter.setClipRect(0, 0, int(self.__item_size.width()), int(self.__item_size.height()))
+        painter.setClipRect(
+            0, 0, int(self.__item_size.width()), int(self.__item_size.height())
+        )
 
         fields = QgsFields()
         # fields.append(QgsField("", QVariant.String))
         feature = QgsFeature(fields, 1)
         feature.setGeometry(geom)
 
-        context = self.qgis_render_context(painter, self.__item_size.width(), self.__item_size.height())
-        context.setExtent(QgsRectangle(0, 1, self.__item_size.width(), self.__item_size.height()))
+        context = self.qgis_render_context(
+            painter, self.__item_size.width(), self.__item_size.height()
+        )
+        context.setExtent(
+            QgsRectangle(0, 1, self.__item_size.width(), self.__item_size.height())
+        )
 
         renderer.startRender(context, fields)
         renderer.renderFeature(feature, context)
         renderer.stopRender(context)
 
+
 class MyScene(QGraphicsScene):
     """Qgeologis Scene"""
+
     plot_edited = pyqtSignal()
 
     def __init__(self, x, y, w, h):
@@ -684,13 +753,13 @@ class MyScene(QGraphicsScene):
     def resizeItems(self):
         for item in self.items():
             if isinstance(item, SlopePlot):
-                item.set_height(self.height()-35)
+                item.set_height(self.height() - 35)
                 item.set_width(self.width())
             if isinstance(item, Axes):
                 if item.is_vertical():
                     item.set_width(self.height())
-                else :
-                    item.set_width(self.width()-50)
+                else:
+                    item.set_width(self.width() - 50)
         self.update()
 
     def mouseMoveEvent(self, event):
@@ -719,6 +788,7 @@ class MyScene(QGraphicsScene):
                 return self.plot_edited.emit()
         return QGraphicsScene.mouseDoubleClickEvent(self, event)
 
+
 class PlotGraphicsView(QGraphicsView):
     def __init__(self, scene, parent=None):
         """ View handles user interaction, like resize, mouse etc
@@ -743,19 +813,17 @@ class PlotGraphicsView(QGraphicsView):
         QGraphicsView.resizeEvent(self, event)
         # by default, the rect is centered on 0,0,
         # we prefer to have 0,0 in the upper left corner
-        rect = QRectF(0, 0, event.size().width(), event.size().height()-1)
+        rect = QRectF(0, 0, event.size().width(), event.size().height() - 1)
         self.scene().setSceneRect(rect)
         self.scene().sceneRectChanged.emit(rect)
+
 
 class PlotView(QWidget):
     """Plot view widget"""
 
     centerSceneOnScale = pyqtSignal()
 
-    def __init__(
-        self,
-        parent=None,
-    ):
+    def __init__(self, parent=None):
         """Plot Widget inserted into main dialog.
         :param parent: parent
         :type parent: QObject
@@ -771,17 +839,19 @@ class PlotView(QWidget):
         box.addWidget(self.__view)
         plot_v_axe = Axes(True)
         plot_v_axe.setGeometry(0, 0, 100, plot_v_axe.height())
-        plot_h_axe = Axes(False, QSize(400,30))
-        plot_h_axe.setGeometry(50, self._scene.height()-35, self._scene.width()-50, 35)
+        plot_h_axe = Axes(False, QSize(400, 30))
+        plot_h_axe.setGeometry(
+            50, self._scene.height() - 35, self._scene.width() - 50, 35
+        )
         plot_item = SlopePlot()
-        plot_item.setGeometry(50,35,plot_item.width()-100,plot_item.height()-70)
+        plot_item.setGeometry(50, 35, plot_item.width() - 100, plot_item.height() - 70)
         self._scene.addItem(plot_item)
         self._scene.addItem(plot_v_axe)
         self._scene.addItem(plot_h_axe)
         self.setLayout(box)
         self.centerSceneOnScale.emit()
         # self.on_geom_update([0,200],[10,20],[4,3],[6,7])
-        self.on_geom_update([],[],[],[])
+        self.on_geom_update([], [], [], [])
 
     def center_scene_on_scale(self):
         """ For time series, if logs scene is too high for windows,
@@ -800,17 +870,23 @@ class PlotView(QWidget):
         """
         for item in self._scene.items():
             if isinstance(item, SlopePlot):
-                item.set_width(rect.width()-100)
-                item.set_height(rect.height()-70)
+                item.set_width(rect.width() - 100)
+                item.set_height(rect.height() - 70)
             if isinstance(item, Axes):
                 if not item.is_vertical():
-                    item.setGeometry(50, self._scene.height()-35, self._scene.width()-50, 35)
+                    item.setGeometry(
+                        50, self._scene.height() - 35, self._scene.width() - 50, 35
+                    )
         self.centerSceneOnScale.emit()
 
     def on_geom_update(self, x_values, a_values, cl_values, cr_values):
         settings = QSettings()
-        tolerated_a_slope = int(settings.value("PisteCreator/graphical_visualisation/tolerated_a_slope", 10))
-        tolerated_c_slope = int(settings.value("PisteCreator/graphical_visualisation/tolerated_c_slope", 10))
+        tolerated_a_slope = int(
+            settings.value("PisteCreator/graphical_visualisation/tolerated_a_slope", 10)
+        )
+        tolerated_c_slope = int(
+            settings.value("PisteCreator/graphical_visualisation/tolerated_c_slope", 10)
+        )
         for item in self._scene.items():
             if isinstance(item, SlopePlot):
                 item.set_data(x_values, a_values, cl_values, cr_values)
@@ -818,11 +894,19 @@ class PlotView(QWidget):
                 if item.is_vertical():
                     if not x_values:
                         item.set_min_x(0)
-                        item.set_max_x(max([tolerated_c_slope, tolerated_a_slope])+5)
+                        item.set_max_x(max([tolerated_c_slope, tolerated_a_slope]) + 5)
                     else:
                         item.set_min_x(0)
-                        item.set_max_x(max(a_values + cl_values + cr_values + [tolerated_c_slope, tolerated_a_slope])+5)
-                else :
+                        item.set_max_x(
+                            max(
+                                a_values
+                                + cl_values
+                                + cr_values
+                                + [tolerated_c_slope, tolerated_a_slope]
+                            )
+                            + 5
+                        )
+                else:
                     if not x_values:
                         item.set_min_x(0)
                         item.set_max_x(100)

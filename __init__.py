@@ -32,4 +32,5 @@ def classFactory(iface):
     """
     #
     from .PisteCreator import PisteCreator
+
     return PisteCreator(iface)

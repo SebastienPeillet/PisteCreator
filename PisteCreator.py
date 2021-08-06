@@ -21,17 +21,15 @@
  ***************************************************************************/
 """
 import os
-from qgis.PyQt.QtCore import (QSettings,
-                              QTranslator,
-                              QCoreApplication,
-                              Qt,
-                              QFileInfo)
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QFileInfo
 
-from qgis.PyQt.QtWidgets import (QAction,
-                                 QGraphicsView,
-                                 QGraphicsScene,
-                                 QToolBar,
-                                 QWidget)
+from qgis.PyQt.QtWidgets import (
+    QAction,
+    QGraphicsView,
+    QGraphicsScene,
+    QToolBar,
+    QWidget,
+)
 
 from qgis.PyQt.QtGui import QIcon
 
@@ -62,11 +60,10 @@ class PisteCreator(QWidget):
         self.canvas = iface.mapCanvas()
 
         # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
+        locale = QSettings().value("locale/userLocale")[0:2]
         locale_path = os.path.join(
-            os.path.dirname(__file__),
-            'i18n',
-            'PisteCreator_{}.qm'.format(locale))
+            os.path.dirname(__file__), "i18n", "PisteCreator_{}.qm".format(locale)
+        )
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -95,7 +92,7 @@ class PisteCreator(QWidget):
         :rtype: QString
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('PisteCreator', message)
+        return QCoreApplication.translate("PisteCreator", message)
 
     def add_action(
         self,
@@ -107,7 +104,8 @@ class PisteCreator(QWidget):
         add_to_toolbar=True,
         status_tip=None,
         whats_this=None,
-        parent=None):
+        parent=None,
+    ):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -162,9 +160,7 @@ class PisteCreator(QWidget):
             self.toolbar.addAction(action)
 
         if add_to_menu:
-            self.iface.addPluginToMenu(
-                u'&PisteCreator',
-                action)
+            self.iface.addPluginToMenu(u"&PisteCreator", action)
 
         self.actions.append(action)
 
@@ -174,10 +170,14 @@ class PisteCreator(QWidget):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
         logger.notice("** INIT PisteCreator")
 
-        self.toolbar = QToolBar(u'PisteCreator')
-        self.toolbar.setObjectName(u'PisteCreator')
+        self.toolbar = QToolBar(u"PisteCreator")
+        self.toolbar.setObjectName(u"PisteCreator")
 
-        action = QAction(QIcon(os.path.join(os.path.dirname(__file__), 'icon.png')),self.tr('PisteCreator'), self.iface.mainWindow())
+        action = QAction(
+            QIcon(os.path.join(os.path.dirname(__file__), "icon.png")),
+            self.tr("PisteCreator"),
+            self.iface.mainWindow(),
+        )
         action.triggered.connect(self.run)
         self.toolbar.addAction(action)
 
@@ -202,9 +202,7 @@ class PisteCreator(QWidget):
         logger.notice("** UNLOAD PisteCreator")
 
         for action in self.actions:
-            self.iface.removePluginMenu(
-                self.tr(u'&PisteCreator'),
-                action)
+            self.iface.removePluginMenu(self.tr(u"&PisteCreator"), action)
             self.iface.removeToolBarIcon(action)
         # remove the toolbar
         if self.toolbar is not None:
@@ -219,10 +217,12 @@ class PisteCreator(QWidget):
     # PisteCreator function
 
     def cleanStop(self):
-        if self.canvas.mapTool() != None :
-            if (self.PisteCreatorTool != None and
-                self.canvas.mapTool().toolName() != 'SlopeMapTool'and
-                self.canvas.mapTool().toolName() != 'SelectMapTool'):
+        if self.canvas.mapTool() != None:
+            if (
+                self.PisteCreatorTool != None
+                and self.canvas.mapTool().toolName() != "SlopeMapTool"
+                and self.canvas.mapTool().toolName() != "SelectMapTool"
+            ):
                 self.PisteCreatorTool.deactivate()
                 self.PisteCreatorTool = None
                 self.iface.actionPan().trigger()
